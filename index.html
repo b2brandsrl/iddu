@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iddu — un'isola-vulcano che non aspetta</title>
+<meta name="description" content="Iddu: action-RPG cooperativo nel browser su un'isola ricalcata su Stromboli, dove il mondo va avanti da solo. Clip, personaggi, mondo e come si entra.">
+<meta property="og:title" content="Iddu — un'isola-vulcano che non aspetta">
+<meta property="og:description" content="Quattro forestieri, un paese, un fuoco da accendere ogni sera. Clip dal gioco, personaggi, mondo e come si entra.">
+<meta property="og:image" content="clip/isola.jpg">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<style>
+  /* Layout: a sea chart of the island. Dark Tyrrhenian ground, chalk ink, brass instruments;
+     the footage of the game are windows cut into the chart. One look, by choice. */
+  :root {
+    color-scheme: dark;
+    --sea: #0c2a35;        /* the page: deep water */
+    --deep: #071c24;       /* bands and wells */
+    --shoal: #143a47;      /* raised surfaces: the island's fill */
+    --chalk: #ece5d3;      /* ink */
+    --dim: #9fb4b4;        /* second ink */
+    --brass: #d9b56a;      /* the instruments: links, keys, marks */
+    --lava: #ff7a4d;       /* only for danger and for what is not done */
+    --line: rgba(236, 229, 211, 0.16);
+    --display: "Marcellus", "Palatino Linotype", Palatino, Georgia, serif;
+    --text: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+    --data: "IBM Plex Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--sea); color: var(--chalk); font: 400 17px/1.55 var(--text); }
+  a { color: var(--brass); }
+  a:focus-visible, button:focus-visible, input:focus-visible, video:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.1; letter-spacing: 0.01em; }
+  h3 { font-size: 1.25rem; line-height: 1.2; }
+  p { margin: 0; max-width: 65ch; }
+  .eyebrow { font: 500 0.74rem/1.3 var(--data); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+  .dim { color: var(--dim); }
+  section { padding-block: clamp(44px, 7vw, 84px); border-top: 1px solid var(--line); }
+  .head { display: grid; gap: 10px; margin-bottom: 28px; }
+
+  /* ---- hero */
+  .hero { position: relative; overflow: hidden; padding-block: clamp(28px, 5vw, 56px) clamp(36px, 6vw, 64px); }
+  .hero .carta { position: absolute; right: -6%; top: -4%; width: min(78%, 900px); height: auto; opacity: 0.55; pointer-events: none; }
+  .hero-grid { position: relative; display: grid; gap: 28px; }
+  .hero h1 { font-size: clamp(4rem, 15vw, 9.5rem); line-height: 0.86; letter-spacing: 0.06em; margin-left: -0.04em; }
+  .lead { font-size: clamp(1.1rem, 2vw, 1.35rem); line-height: 1.45; max-width: 44ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 0; margin: 0; list-style: none; font: 400 0.82rem/1.4 var(--data); color: var(--dim); }
+  .facts b { color: var(--chalk); font-weight: 500; }
+  .window { position: relative; border: 1px solid var(--line); background: var(--deep); border-radius: 4px; overflow: hidden; }
+  .window video, .window img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--deep); }
+  .jump { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 0.8rem/1.4 var(--data); letter-spacing: 0.06em; }
+  .jump a { text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+  .jump a:hover { border-color: var(--brass); }
+
+  /* ---- chart */
+  .carta .costa { fill: var(--shoal); stroke: var(--chalk); stroke-width: 12; stroke-linejoin: round; }
+  .carta .curva { fill: none; stroke: var(--chalk); stroke-opacity: 0.3; stroke-width: 5; }
+  .carta .maestra { stroke-opacity: 0.6; stroke-width: 8; }
+  .carta .m circle { fill: var(--brass); }
+  .carta .m-pericolo circle { fill: var(--lava); }
+  .carta .m-cima circle { fill: var(--chalk); }
+  .carta text { font: 400 118px var(--data); fill: var(--chalk); }
+  .carta .zona, .carta .mare { font: 400 150px var(--display); letter-spacing: 12px; fill: var(--dim); }
+  .carta .coord { fill: var(--dim); }
+  .carta .scala path { stroke: var(--chalk); stroke-width: 9; fill: none; }
+  .hero .carta text, .hero .carta .scala, .hero .carta .m { display: none; }
+
+  /* ---- how to get in */
+  .steps { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); padding: 0; margin: 0 0 30px; list-style: none; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .steps li::before { content: counter(s); font: 400 2.6rem/1 var(--display); color: var(--brass); }
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 24px; padding: 22px; margin: 0; list-style: none; background: var(--deep); border: 1px solid var(--line); border-radius: 4px; }
+  .keys li { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  kbd { flex: none; font: 500 0.74rem/1 var(--data); color: var(--deep); background: var(--brass); padding: 5px 7px 4px; border-radius: 3px; white-space: nowrap; }
+  .note { margin-top: 18px; padding-left: 14px; border-left: 2px solid var(--brass); color: var(--dim); }
+
+  /* ---- clips */
+  .clips { display: grid; gap: 26px 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); }
+  .clip { display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .clip p { color: var(--dim); font-size: 0.98rem; }
+  .play { position: absolute; left: 10px; bottom: 10px; font: 500 0.7rem/1 var(--data); letter-spacing: 0.08em; color: var(--chalk); background: rgba(7, 28, 36, 0.78); border: 1px solid var(--line); border-radius: 3px; padding: 6px 8px 5px; cursor: pointer; }
+
+  /* ---- heroes */
+  .party { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .hero-card { display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .hero-card .who { display: flex; gap: 14px; align-items: center; }
+  .hero-card img { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--c); object-fit: cover; flex: none; background: var(--deep); }
+  .hero-card .role { font: 400 0.76rem/1.3 var(--data); letter-spacing: 0.06em; color: var(--c); }
+  .hero-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 0.96rem; color: var(--dim); }
+  .hero-card li b { color: var(--chalk); font-weight: 500; }
+  .tag { display: inline-block; font: 500 0.68rem/1 var(--data); letter-spacing: 0.06em; padding: 4px 6px 3px; border: 1px solid var(--line); border-radius: 3px; color: var(--dim); }
+
+  /* ---- the world */
+  .world { display: grid; gap: 34px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .world { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; } }
+  .world .carta { width: 100%; height: auto; background: var(--deep); border: 1px solid var(--line); border-radius: 4px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font: 400 0.76rem/1.4 var(--data); color: var(--dim); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+  .beats { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+  .beats li { display: grid; grid-template-columns: 5.2rem minmax(0, 1fr); gap: 14px; align-items: baseline; }
+  .beats time, .beats .when { font: 500 0.82rem/1.3 var(--data); color: var(--brass); }
+  .ia { margin-top: 30px; padding: 22px; background: var(--deep); border: 1px solid var(--line); border-radius: 4px; display: grid; gap: 10px; }
+
+  /* ---- before and after */
+  .pairs { display: grid; gap: 30px 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .pair { display: grid; gap: 8px; min-width: 0; }
+  .slider { --p: 50%; position: relative; aspect-ratio: 16 / 9; max-width: 100%; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--deep); }
+  .slider img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .slider .after { clip-path: inset(0 0 0 var(--p)); }
+  .slider::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--p); width: 2px; margin-left: -1px; background: var(--brass); pointer-events: none; }
+  .slider input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+  .slider .lab { position: absolute; bottom: 8px; font: 500 0.66rem/1 var(--data); letter-spacing: 0.08em; text-transform: uppercase; color: var(--chalk); background: rgba(7, 28, 36, 0.78); padding: 5px 6px 4px; border-radius: 3px; pointer-events: none; }
+  .slider .lab.a { left: 8px; } .slider .lab.b { right: 8px; }
+  .pair p { font-size: 0.95rem; color: var(--dim); }
+
+  /* ---- to try, limits */
+  .try { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; counter-reset: t; }
+  .try li { counter-increment: t; display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 4px 12px; padding: 16px 0; border-top: 1px solid var(--line); }
+  .try li::before { content: counter(t); font: 400 1.7rem/1 var(--display); color: var(--brass); grid-row: span 2; }
+  .try b { font-weight: 500; }
+  .try span { color: var(--dim); }
+  .asks { margin-top: 30px; padding: 24px; border: 1px solid var(--brass); border-radius: 4px; display: grid; gap: 12px; }
+  .asks ol { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+  .two { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+  .list { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .list li { padding-left: 16px; position: relative; }
+  .list li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 7px; height: 7px; border-radius: 50%; background: var(--brass); }
+  .list.no li::before { background: var(--lava); }
+  footer { border-top: 1px solid var(--line); padding-block: 30px 44px; font-size: 0.9rem; color: var(--dim); }
+  footer p { max-width: 80ch; }
+  @media (max-width: 560px) { .hero .carta { width: 130%; right: -40%; top: 4%; opacity: 0.35; } .beats li { grid-template-columns: 1fr; gap: 2px; } }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+  html { scroll-behavior: smooth; }
+  .prose { display: grid; gap: 14px; font-size: 1.12rem; line-height: 1.6; }
+  .prose p { max-width: 62ch; }
+  .cols { display: grid; gap: 30px 34px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
+  .cols.three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+  .cols h3 { margin-bottom: 10px; }
+  .plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 11px; }
+  .plain li { min-width: 0; }
+  .chips { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips li { font: 500 0.78rem/1 var(--data); padding: 7px 9px 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--chalk); }
+  .ladder { margin: 0; padding: 0; list-style: none; counter-reset: l -1; display: grid; gap: 0; }
+  .ladder li { counter-increment: l; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); color: var(--dim); }
+  .ladder li::before { content: counter(l); font: 400 1.3rem/1.1 var(--display); color: var(--lava); }
+  .ladder li:first-child::before { color: var(--brass); }
+  .people { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px 24px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .people li { display: grid; gap: 1px; padding-left: 12px; border-left: 2px solid var(--brass); }
+  .gallery { margin-top: 34px; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+  .gallery figure { margin: 0; display: grid; gap: 6px; }
+  .gallery img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line); border-radius: 4px; }
+  .gallery figcaption { font-size: 0.9rem; color: var(--dim); }
+</style>
+
+<header class="hero">
+  <svg class="carta" viewBox="-3350 -2950 6950 5700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Carta dell'isola: curve di livello ogni 100 metri e luoghi del gioco"><path class="costa" d="M3264 -2617L3253 -2592L3277 -2568L3298 -2544L3336 -2521L3384 -2538L3408 -2562L3432 -2592L3408 -2618L3384 -2614L3336 -2614L3311 -2616L3264 -2617ZM672 -1993L648 -1992L600 -1984L552 -1974L515 -1968L480 -1966L432 -1966L408 -1968L384 -1967L336 -1966L288 -1947L264 -1940L219 -1920L192 -1909L168 -1894L129 -1872L96 -1856L72 -1845L32 -1824L1 -1800L-21 -1776L-40 -1752L-53 -1728L-72 -1688L-93 -1656L-111 -1632L-127 -1608L-148 -1584L-168 -1549L-189 -1512L-202 -1488L-216 -1452L-231 -1416L-240 -1390L-263 -1344L-278 -1320L-295 -1296L-329 -1272L-360 -1260L-384 -1248L-431 -1224L-455 -1200L-480 -1182L-504 -1158L-527 -1128L-545 -1104L-564 -1080L-583 -1056L-607 -1032L-636 -1008L-672 -984L-696 -965L-720 -948L-745 -936L-792 -924L-816 -904L-840 -884L-864 -864L-900 -840L-928 -816L-959 -792L-984 -775L-1008 -752L-1032 -739L-1057 -720L-1082 -696L-1107 -672L-1129 -648L-1152 -622L-1176 -589L-1200 -563L-1224 -543L-1248 -522L-1272 -500L-1320 -460L-1344 -442L-1368 -426L-1406 -408L-1440 -384L-1464 -373L-1490 -360L-1536 -343L-1560 -328L-1584 -311L-1632 -297L-1680 -289L-1708 -288L-1752 -276L-1800 -271L-1848 -269L-1896 -272L-1944 -276L-1992 -284L-2016 -294L-2064 -290L-2064 -286L-2064 -244L-2088 -232L-2088 -208L-2082 -168L-2112 -154L-2112 -129L-2088 -96L-2088 -72L-2091 -48L-2088 -15L-2086 24L-2091 48L-2109 96L-2117 120L-2136 160L-2160 176L-2184 198L-2208 223L-2232 253L-2266 264L-2232 288L-2232 289L-2235 336L-2232 361L-2226 408L-2208 449L-2184 464L-2180 504L-2172 552L-2163 600L-2136 622L-2136 627L-2155 672L-2125 696L-2088 718L-2064 743L-2048 768L-2037 792L-2023 840L-2012 864L-1992 895L-1968 912L-1944 943L-1944 968L-1944 993L-1913 1008L-1872 1024L-1855 1056L-1843 1080L-1824 1120L-1807 1152L-1789 1176L-1768 1200L-1752 1229L-1728 1253L-1702 1272L-1680 1309L-1656 1339L-1633 1368L-1624 1392L-1608 1418L-1584 1459L-1569 1488L-1552 1512L-1536 1541L-1499 1560L-1464 1570L-1416 1566L-1368 1574L-1321 1560L-1296 1558L-1248 1560L-1224 1571L-1176 1581L-1152 1586L-1104 1603L-1079 1608L-1032 1615L-1001 1632L-983 1656L-960 1700L-936 1712L-901 1728L-867 1752L-848 1776L-834 1800L-805 1824L-782 1848L-762 1872L-740 1896L-718 1920L-696 1944L-672 1971L-647 1992L-624 2017L-579 2040L-552 2057L-528 2072L-504 2089L-471 2112L-438 2136L-408 2156L-384 2173L-360 2194L-336 2219L-312 2241L-288 2263L-264 2291L-240 2318L-216 2347L-192 2370L-168 2384L-120 2395L-96 2403L-48 2423L-24 2431L24 2448L48 2453L96 2463L144 2464L192 2457L222 2448L264 2424L288 2407L312 2396L360 2377L384 2354L408 2329L432 2304L453 2280L470 2256L481 2232L504 2197L528 2166L552 2137L576 2113L600 2095L624 2075L648 2054L672 2031L696 2009L720 1987L744 1967L768 1932L792 1901L816 1889L864 1892L912 1889L960 1892L1008 1892L1052 1896L1080 1899L1107 1896L1152 1881L1200 1872L1209 1848L1222 1800L1230 1776L1248 1733L1258 1704L1271 1656L1284 1632L1296 1599L1308 1560L1320 1521L1334 1488L1344 1463L1368 1440L1388 1392L1400 1368L1416 1321L1429 1296L1439 1248L1443 1224L1450 1176L1449 1128L1453 1080L1464 1041L1476 1008L1469 960L1454 936L1444 888L1453 840L1464 813L1487 768L1505 744L1512 696L1526 648L1539 624L1558 576L1571 552L1586 528L1608 491L1632 461L1656 432L1676 408L1697 384L1725 360L1752 339L1776 315L1800 294L1824 270L1848 249L1872 231L1896 210L1920 179L1938 144L1946 120L1965 72L1980 48L1992 19L2016 -23L2036 -48L2046 -72L2064 -109L2087 -144L2103 -168L2117 -192L2136 -222L2160 -251L2184 -285L2208 -312L2225 -336L2243 -360L2262 -384L2280 -409L2306 -432L2328 -477L2348 -504L2374 -528L2400 -550L2419 -576L2434 -600L2470 -624L2496 -647L2514 -672L2522 -696L2532 -744L2545 -768L2557 -816L2568 -852L2574 -888L2592 -919L2603 -960L2618 -984L2623 -1032L2616 -1062L2592 -1085L2568 -1108L2544 -1145L2522 -1176L2497 -1200L2477 -1224L2460 -1248L2424 -1262L2400 -1275L2371 -1296L2346 -1320L2328 -1349L2304 -1382L2256 -1373L2208 -1378L2160 -1384L2113 -1392L2088 -1393L2040 -1399L2016 -1418L1969 -1440L1944 -1450L1921 -1488L1896 -1503L1872 -1520L1844 -1536L1824 -1568L1800 -1588L1772 -1608L1732 -1632L1704 -1642L1676 -1656L1644 -1680L1608 -1694L1584 -1710L1555 -1728L1527 -1752L1488 -1762L1460 -1776L1416 -1799L1387 -1800L1344 -1819L1296 -1808L1248 -1805L1200 -1807L1152 -1819L1111 -1824L1080 -1835L1032 -1846L1008 -1852L960 -1868L936 -1876L896 -1896L864 -1912L840 -1928L816 -1944L768 -1966L744 -1976L696 -1990L672 -1993Z"/><path class="curva" d="M336 -1873L312 -1857L288 -1842L240 -1829L195 -1824L168 -1803L144 -1786L116 -1776L86 -1752L64 -1728L46 -1704L31 -1656L21 -1632L0 -1597L-22 -1560L-45 -1536L-59 -1512L-63 -1464L-72 -1426L-91 -1392L-111 -1368L-120 -1344L-140 -1296L-167 -1272L-192 -1255L-206 -1224L-216 -1192L-240 -1161L-259 -1128L-279 -1104L-312 -1084L-336 -1070L-360 -1048L-384 -1018L-408 -988L-432 -962L-456 -939L-480 -919L-504 -902L-530 -888L-576 -865L-600 -853L-625 -840L-668 -816L-696 -802L-720 -788L-744 -767L-780 -744L-816 -722L-840 -704L-864 -683L-888 -661L-912 -639L-936 -619L-976 -600L-1000 -576L-1026 -552L-1048 -528L-1068 -504L-1087 -480L-1108 -456L-1134 -432L-1164 -408L-1199 -384L-1224 -365L-1248 -346L-1272 -330L-1307 -312L-1344 -295L-1368 -285L-1412 -264L-1440 -249L-1464 -236L-1508 -216L-1536 -206L-1583 -192L-1608 -187L-1656 -179L-1704 -175L-1752 -170L-1776 -159L-1776 -125L-1775 -96L-1790 -72L-1797 -24L-1800 0L-1841 0L-1872 -4L-1896 7L-1920 37L-1944 64L-1968 82L-1992 98L-2016 123L-2040 153L-2057 192L-2067 216L-2088 251L-2112 283L-2126 312L-2118 360L-2103 384L-2083 408L-2064 443L-2038 456L-1992 472L-1944 480L-1914 480L-1872 481L-1848 474L-1811 480L-1805 528L-1776 535L-1755 576L-1737 600L-1719 624L-1720 672L-1711 720L-1700 744L-1676 768L-1651 792L-1637 840L-1648 888L-1632 917L-1608 941L-1584 965L-1560 1003L-1539 1032L-1526 1056L-1508 1080L-1464 1102L-1446 1128L-1422 1152L-1392 1163L-1368 1142L-1349 1176L-1344 1210L-1329 1248L-1296 1272L-1272 1284L-1248 1306L-1224 1339L-1198 1344L-1181 1392L-1176 1416L-1152 1444L-1125 1464L-1090 1488L-1056 1500L-1009 1488L-1005 1488L-960 1502L-936 1518L-912 1560L-892 1584L-864 1587L-816 1594L-792 1619L-761 1632L-735 1656L-716 1680L-720 1704L-741 1752L-713 1776L-695 1800L-672 1839L-648 1859L-624 1875L-592 1896L-552 1919L-504 1914L-480 1930L-456 1953L-432 1972L-384 1987L-371 2016L-358 2040L-312 2063L-290 2088L-264 2109L-234 2088L-216 2064L-168 2058L-144 2087L-120 2109L-96 2129L-48 2130L-3 2112L24 2092L48 2084L96 2075L120 2095L168 2090L192 2064L211 2016L226 1992L236 1944L240 1916L264 1894L303 1896L312 1937L336 1966L351 1992L384 2009L426 1992L456 1989L480 1998L507 1992L545 1968L571 1944L591 1920L614 1896L642 1872L658 1848L665 1800L677 1776L696 1749L720 1705L744 1689L792 1700L816 1708L840 1737L888 1748L936 1748L960 1758L1006 1752L1032 1743L1080 1733L1104 1723L1128 1691L1134 1656L1148 1608L1159 1584L1165 1536L1183 1512L1203 1488L1215 1440L1199 1416L1200 1382L1224 1361L1248 1344L1277 1320L1288 1272L1279 1224L1296 1184L1318 1152L1332 1128L1328 1080L1341 1032L1359 1008L1371 984L1358 960L1320 951L1272 942L1262 912L1275 888L1272 846L1272 839L1296 801L1320 782L1344 756L1368 729L1373 696L1351 672L1351 624L1344 588L1333 552L1344 520L1356 480L1390 456L1416 448L1464 433L1476 408L1468 360L1482 312L1507 288L1536 268L1560 252L1608 253L1656 252L1685 240L1709 216L1728 192L1769 168L1800 145L1818 120L1795 96L1771 72L1752 40L1728 6L1728 -24L1752 -31L1800 -31L1834 -24L1849 -24L1881 -48L1895 -96L1872 -127L1864 -168L1884 -192L1916 -216L1925 -240L1939 -288L1920 -312L1913 -360L1896 -398L1890 -432L1896 -456L1889 -480L1872 -514L1850 -552L1835 -576L1827 -624L1818 -648L1800 -674L1765 -696L1755 -744L1744 -768L1704 -784L1673 -792L1656 -825L1646 -864L1637 -912L1608 -921L1580 -936L1560 -981L1512 -981L1480 -984L1464 -1026L1455 -1056L1416 -1078L1392 -1103L1368 -1119L1341 -1128L1314 -1152L1292 -1176L1275 -1224L1248 -1242L1200 -1241L1176 -1254L1152 -1284L1130 -1320L1144 -1368L1131 -1416L1123 -1440L1104 -1479L1080 -1493L1032 -1503L992 -1512L984 -1546L960 -1572L912 -1583L912 -1591L912 -1612L895 -1656L864 -1677L840 -1687L792 -1697L744 -1702L696 -1702L672 -1709L624 -1728L599 -1752L576 -1793L552 -1822L528 -1841L504 -1855L456 -1851L432 -1843L384 -1832L363 -1872L336 -1873Z"/><path class="curva" d="M96 -1444L72 -1434L48 -1401L41 -1368L23 -1344L-15 -1320L-27 -1296L-45 -1248L-58 -1224L-75 -1200L-96 -1175L-120 -1149L-144 -1115L-160 -1080L-162 -1032L-157 -984L-160 -936L-169 -912L-192 -884L-217 -864L-264 -841L-288 -836L-336 -824L-361 -816L-408 -801L-432 -792L-480 -773L-504 -762L-544 -744L-576 -728L-600 -715L-633 -696L-672 -672L-696 -657L-720 -641L-746 -624L-779 -600L-812 -576L-840 -555L-864 -535L-888 -515L-912 -493L-936 -470L-960 -441L-980 -408L-994 -384L-1010 -360L-1032 -332L-1056 -311L-1103 -288L-1128 -282L-1176 -272L-1219 -264L-1248 -254L-1274 -240L-1302 -216L-1324 -192L-1356 -168L-1392 -152L-1416 -144L-1464 -127L-1494 -120L-1536 -97L-1544 -72L-1547 -24L-1546 24L-1565 48L-1578 96L-1571 144L-1563 192L-1561 240L-1550 264L-1536 291L-1512 323L-1512 349L-1536 372L-1547 408L-1556 456L-1536 492L-1512 523L-1512 545L-1512 557L-1488 600L-1494 624L-1491 672L-1464 692L-1450 720L-1440 746L-1424 792L-1409 816L-1392 847L-1368 864L-1320 876L-1289 888L-1288 936L-1272 967L-1248 990L-1209 1008L-1179 1032L-1200 1059L-1200 1092L-1189 1128L-1183 1176L-1152 1198L-1128 1202L-1104 1235L-1086 1272L-1090 1320L-1076 1344L-1051 1368L-1008 1392L-960 1379L-912 1372L-864 1390L-850 1416L-840 1452L-797 1464L-768 1474L-744 1462L-716 1464L-696 1501L-672 1534L-648 1560L-638 1584L-624 1623L-600 1654L-594 1680L-581 1728L-563 1752L-528 1773L-504 1777L-456 1778L-419 1800L-393 1824L-360 1845L-336 1858L-312 1875L-288 1897L-265 1872L-253 1848L-225 1824L-204 1824L-170 1848L-144 1871L-120 1896L-102 1920L-79 1944L-66 1944L-24 1925L20 1920L48 1911L96 1906L123 1896L136 1848L148 1824L174 1800L209 1776L219 1776L262 1800L266 1800L294 1776L312 1740L336 1717L360 1752L384 1773L408 1790L432 1815L456 1827L480 1822L528 1804L540 1776L550 1728L568 1704L578 1680L594 1632L602 1608L595 1584L613 1560L647 1536L672 1522L704 1512L722 1512L768 1531L792 1542L816 1576L840 1586L879 1584L912 1561L936 1559L984 1537L1013 1536L1025 1488L1032 1448L1056 1417L1073 1392L1064 1344L1090 1320L1115 1296L1138 1272L1163 1248L1152 1205L1136 1176L1152 1129L1176 1121L1196 1080L1205 1056L1208 1008L1200 978L1176 947L1152 925L1128 907L1089 888L1104 841L1128 830L1165 816L1183 792L1199 744L1206 720L1240 696L1252 672L1245 648L1224 613L1200 600L1177 552L1176 528L1177 504L1180 456L1193 408L1215 384L1248 376L1296 368L1344 367L1359 336L1351 288L1350 240L1369 216L1400 192L1422 168L1440 135L1480 120L1512 117L1536 123L1566 120L1590 96L1612 72L1608 44L1584 17L1560 -7L1540 -48L1560 -93L1584 -117L1608 -134L1632 -149L1661 -168L1643 -192L1631 -216L1632 -240L1631 -264L1635 -288L1632 -323L1608 -357L1595 -384L1584 -413L1560 -445L1540 -480L1536 -511L1512 -546L1505 -576L1488 -602L1446 -624L1451 -672L1440 -713L1416 -735L1392 -755L1369 -792L1356 -816L1331 -840L1316 -864L1296 -896L1272 -922L1224 -927L1200 -940L1169 -960L1146 -984L1128 -1016L1080 -1025L1040 -1032L1021 -1056L1027 -1104L1008 -1143L960 -1147L914 -1152L906 -1176L888 -1220L864 -1236L845 -1272L837 -1296L816 -1333L773 -1320L748 -1296L721 -1272L696 -1254L691 -1296L703 -1320L696 -1361L670 -1368L624 -1379L576 -1381L552 -1411L528 -1427L495 -1440L456 -1444L432 -1438L408 -1442L360 -1447L312 -1458L264 -1448L216 -1451L168 -1455L120 -1450L96 -1444Z"/><path class="curva" d="M144 -1225L120 -1224L86 -1200L74 -1152L59 -1128L24 -1110L0 -1103L-24 -1060L-27 -1032L-29 -984L-21 -960L0 -928L12 -888L9 -840L0 -808L-24 -781L-48 -760L-72 -722L-96 -710L-132 -696L-168 -692L-216 -689L-264 -683L-312 -674L-336 -670L-384 -659L-417 -648L-456 -633L-480 -623L-526 -600L-552 -586L-576 -573L-611 -552L-645 -528L-672 -507L-696 -487L-720 -466L-744 -445L-768 -424L-792 -402L-816 -376L-840 -338L-846 -312L-861 -264L-883 -240L-912 -219L-936 -209L-984 -193L-1008 -187L-1056 -178L-1104 -171L-1128 -165L-1164 -144L-1180 -120L-1197 -72L-1223 -48L-1248 -36L-1277 -24L-1320 -14L-1347 0L-1344 41L-1340 72L-1329 120L-1344 155L-1353 192L-1351 240L-1323 264L-1317 288L-1334 312L-1348 336L-1360 384L-1370 408L-1383 456L-1366 480L-1360 528L-1353 576L-1344 602L-1320 648L-1303 672L-1293 696L-1276 744L-1260 768L-1238 792L-1200 809L-1200 832L-1200 846L-1173 864L-1128 875L-1080 885L-1056 909L-1032 919L-991 912L-981 912L-984 960L-996 984L-991 1032L-1008 1067L-1033 1080L-1032 1113L-1008 1136L-984 1157L-952 1176L-953 1224L-936 1258L-888 1257L-864 1247L-840 1255L-815 1272L-787 1296L-755 1320L-720 1336L-672 1325L-646 1344L-624 1371L-600 1392L-567 1416L-545 1440L-529 1488L-528 1536L-513 1560L-500 1584L-480 1617L-456 1639L-408 1642L-372 1656L-350 1680L-335 1704L-293 1704L-275 1680L-247 1656L-216 1652L-192 1663L-168 1682L-120 1703L-96 1727L-79 1752L-48 1773L0 1761L24 1752L59 1728L80 1704L98 1680L122 1656L168 1642L216 1636L249 1632L263 1584L288 1582L312 1595L349 1608L384 1618L423 1632L456 1638L472 1608L480 1574L490 1536L499 1488L506 1464L528 1426L552 1410L586 1392L624 1380L672 1380L702 1368L730 1368L765 1392L792 1404L826 1416L859 1416L878 1392L895 1368L898 1320L891 1272L925 1248L960 1226L984 1208L1008 1185L1030 1152L1020 1104L1032 1073L1060 1056L1069 1008L1056 977L1015 960L998 936L960 917L936 904L914 864L933 816L940 792L953 744L984 729L1032 731L1080 731L1101 696L1103 648L1105 624L1080 602L1056 578L1032 556L1009 528L1014 480L1020 432L1027 384L1034 360L1056 319L1080 294L1104 282L1143 264L1172 264L1200 282L1235 264L1248 228L1258 192L1272 155L1296 133L1320 114L1320 76L1320 67L1344 42L1379 24L1406 0L1412 -48L1415 -96L1420 -120L1416 -162L1411 -192L1392 -227L1376 -264L1365 -288L1347 -336L1324 -360L1309 -384L1296 -415L1272 -435L1254 -480L1225 -504L1224 -540L1200 -557L1200 -599L1212 -624L1200 -657L1176 -681L1135 -696L1127 -720L1080 -736L1055 -744L1032 -774L1008 -802L984 -826L960 -852L936 -872L897 -888L864 -890L816 -911L793 -936L768 -948L744 -984L736 -1008L696 -1030L672 -1040L646 -1056L615 -1056L590 -1032L576 -1002L552 -1025L534 -1056L527 -1080L528 -1116L530 -1152L504 -1163L456 -1168L432 -1177L384 -1193L360 -1206L312 -1215L264 -1215L240 -1226L201 -1224L168 -1216L144 -1225Z"/><path class="curva" d="M144 -1011L128 -984L128 -936L122 -888L113 -864L111 -816L96 -776L72 -751L48 -742L0 -727L-14 -696L-24 -661L-48 -641L-84 -624L-120 -611L-159 -600L-192 -590L-240 -576L-264 -569L-312 -555L-336 -546L-380 -528L-408 -515L-432 -503L-466 -480L-496 -456L-522 -432L-543 -408L-565 -384L-592 -360L-621 -336L-648 -313L-672 -290L-696 -264L-719 -240L-740 -216L-758 -192L-775 -168L-793 -144L-816 -116L-840 -96L-888 -85L-936 -89L-971 -72L-981 -24L-993 0L-1032 12L-1080 17L-1104 26L-1145 48L-1139 96L-1154 120L-1163 168L-1176 214L-1176 223L-1152 260L-1152 282L-1170 312L-1176 336L-1200 376L-1209 408L-1204 456L-1212 504L-1210 552L-1199 576L-1180 624L-1166 648L-1136 672L-1104 690L-1080 700L-1055 720L-1032 762L-1008 771L-989 816L-960 824L-936 853L-912 881L-905 912L-888 957L-880 984L-888 1016L-912 1053L-912 1059L-884 1080L-847 1104L-826 1128L-792 1133L-756 1152L-725 1176L-696 1197L-664 1200L-641 1200L-600 1194L-576 1200L-551 1224L-528 1257L-504 1280L-480 1298L-449 1320L-418 1344L-403 1368L-385 1416L-408 1458L-417 1488L-399 1512L-365 1536L-336 1549L-288 1536L-264 1529L-235 1512L-192 1500L-168 1522L-144 1547L-120 1564L-87 1584L-48 1604L0 1594L22 1560L48 1544L92 1536L120 1526L149 1512L185 1488L200 1464L221 1440L264 1429L286 1464L312 1484L336 1490L360 1487L387 1464L408 1429L416 1392L432 1346L456 1336L485 1320L504 1295L528 1264L576 1248L624 1268L672 1258L696 1245L720 1249L768 1252L776 1224L792 1187L816 1165L840 1150L867 1128L888 1103L911 1056L919 1032L912 989L888 964L864 951L840 915L831 888L819 840L810 816L790 792L772 744L782 696L792 667L816 644L864 640L912 640L951 624L937 576L925 552L902 528L887 504L890 480L893 432L904 384L912 352L936 332L961 312L984 286L1009 264L1036 240L1065 216L1086 192L1111 168L1132 144L1143 96L1152 66L1168 24L1176 -15L1190 -48L1197 -96L1188 -144L1176 -172L1159 -216L1146 -240L1114 -288L1104 -313L1086 -360L1066 -384L1047 -408L1032 -446L1025 -480L1008 -516L984 -542L980 -576L936 -597L888 -596L840 -595L816 -608L792 -635L768 -669L747 -696L732 -696L717 -696L673 -720L672 -746L624 -767L611 -792L600 -821L552 -829L523 -816L480 -805L464 -840L467 -888L456 -917L432 -938L396 -960L360 -964L312 -971L264 -964L216 -980L192 -992L150 -1008L144 -1011Z"/><path class="curva maestra" d="M240 -801L216 -770L192 -747L168 -733L144 -716L120 -687L96 -658L59 -648L40 -624L24 -581L0 -558L-24 -547L-61 -528L-92 -504L-120 -481L-144 -467L-172 -456L-216 -440L-241 -432L-288 -414L-312 -404L-359 -384L-384 -373L-409 -360L-444 -336L-472 -312L-493 -288L-515 -264L-542 -240L-569 -216L-593 -192L-611 -168L-626 -144L-646 -96L-655 -72L-672 -36L-696 -6L-720 22L-742 48L-768 65L-816 68L-864 64L-885 96L-888 141L-912 158L-936 173L-978 192L-982 240L-988 264L-997 312L-1008 360L-1028 384L-1034 408L-1052 456L-1055 504L-1048 552L-1039 600L-1028 624L-996 648L-960 667L-960 696L-966 720L-937 744L-912 758L-888 775L-861 792L-840 824L-816 849L-797 888L-790 912L-773 960L-770 1008L-752 1032L-720 1054L-696 1063L-660 1080L-624 1089L-576 1092L-541 1104L-504 1110L-464 1128L-432 1145L-408 1167L-384 1183L-360 1202L-340 1248L-326 1272L-312 1301L-294 1344L-274 1368L-240 1372L-216 1360L-168 1365L-144 1377L-120 1395L-82 1416L-69 1416L-24 1406L24 1398L64 1392L96 1379L110 1344L120 1301L141 1272L161 1248L190 1224L216 1220L233 1248L249 1272L266 1296L288 1320L336 1325L356 1296L367 1272L387 1248L409 1224L432 1187L456 1156L480 1142L528 1139L552 1127L576 1132L624 1128L647 1104L672 1083L696 1068L720 1049L744 1016L746 984L739 960L720 919L706 888L713 840L705 792L682 768L672 737L662 696L661 648L672 624L696 599L720 570L734 528L739 480L733 432L735 384L744 356L767 312L781 288L796 264L816 233L840 201L864 177L888 156L912 136L936 119L954 72L960 44L979 0L981 -48L980 -96L963 -144L944 -168L929 -192L912 -222L888 -259L869 -288L854 -312L840 -342L828 -384L792 -408L768 -416L737 -432L696 -455L672 -469L648 -481L604 -504L576 -525L552 -550L538 -576L532 -624L524 -648L480 -660L432 -653L397 -672L381 -696L360 -744L336 -760L312 -772L285 -792L240 -801Z"/><path class="curva" d="M192 -600L216 -607L264 -607L288 -600L312 -569L336 -540L360 -523L390 -504L410 -480L432 -456L465 -432L493 -408L520 -384L552 -360L573 -336L592 -312L619 -288L648 -269L672 -260L706 -240L714 -192L728 -168L752 -144L788 -120L803 -96L812 -48L792 -2L777 24L775 72L768 103L741 120L696 142L672 159L648 181L624 212L607 240L594 264L576 307L566 336L553 384L549 408L548 456L533 504L520 528L506 576L500 600L497 648L504 674L527 720L540 744L552 768L572 816L583 840L596 888L576 935L552 959L528 982L504 1003L480 1015L438 1032L408 1044L384 1057L339 1080L312 1085L289 1056L270 1032L240 1014L216 1007L192 1018L168 1035L148 1080L120 1104L96 1121L72 1141L53 1176L48 1212L24 1231L-24 1242L-72 1244L-96 1249L-142 1248L-168 1240L-201 1224L-219 1200L-240 1165L-247 1128L-264 1094L-288 1078L-327 1056L-360 1037L-384 1026L-432 1011L-456 998L-490 984L-528 969L-576 967L-603 960L-648 937L-661 912L-672 875L-696 859L-721 840L-719 816L-739 792L-757 768L-792 747L-808 720L-812 672L-817 648L-834 600L-844 576L-840 538L-826 504L-822 456L-818 408L-828 360L-829 312L-827 264L-814 240L-785 216L-744 206L-704 192L-673 168L-650 144L-631 120L-619 96L-600 57L-576 28L-560 0L-546 -24L-528 -50L-504 -82L-480 -114L-456 -143L-432 -168L-408 -189L-384 -207L-360 -221L-317 -240L-288 -252L-252 -264L-216 -274L-168 -282L-143 -288L-96 -298L-48 -303L0 -295L24 -286L72 -285L96 -300L120 -333L126 -360L125 -408L114 -432L91 -456L72 -502L72 -505L96 -529L144 -542L166 -576L192 -600Z"/><path class="curva" d="M240 -444L218 -408L226 -360L217 -312L211 -288L192 -249L168 -216L143 -192L111 -168L72 -145L48 -136L0 -130L-28 -144L-48 -170L-72 -158L-96 -138L-144 -129L-192 -124L-220 -120L-264 -102L-288 -81L-312 -48L-325 -24L-337 0L-360 24L-370 72L-360 103L-360 144L-366 168L-384 216L-432 204L-475 192L-504 174L-537 192L-566 216L-594 240L-606 264L-624 293L-638 336L-624 384L-612 408L-598 432L-576 472L-563 504L-555 552L-554 600L-571 648L-592 672L-624 692L-648 706L-656 744L-633 768L-610 792L-578 816L-565 840L-528 864L-504 874L-461 888L-432 896L-384 909L-360 912L-312 919L-264 936L-240 951L-216 969L-192 1006L-168 1019L-158 1056L-155 1104L-120 1123L-72 1108L-48 1088L-24 1079L6 1056L24 1032L31 984L43 936L53 912L78 888L99 864L144 840L168 833L216 836L240 849L274 864L305 888L336 895L360 879L384 862L425 840L408 793L384 771L370 744L360 715L342 672L331 648L320 600L322 552L330 504L336 478L349 432L360 398L373 360L384 330L402 288L414 264L432 233L456 201L480 180L504 161L528 132L549 96L576 78L600 71L607 24L622 -24L626 -48L624 -73L600 -101L580 -144L552 -164L528 -177L504 -193L480 -217L456 -252L432 -276L408 -291L375 -312L347 -336L324 -360L306 -384L288 -413L264 -439L240 -444Z"/><path class="curva" d="M336 -136L326 -96L312 -61L288 -32L264 -16L227 0L192 3L168 -4L123 0L96 6L48 21L24 32L0 58L-28 72L-72 80L-96 62L-143 72L-168 82L-192 101L-216 129L-221 168L-219 216L-233 264L-216 306L-192 327L-168 347L-144 365L-120 384L-88 408L-68 432L-68 480L-92 504L-120 519L-144 531L-192 548L-216 555L-263 552L-288 546L-336 534L-375 528L-408 526L-432 529L-459 552L-476 600L-480 624L-486 672L-502 720L-517 744L-504 791L-480 803L-445 816L-408 828L-367 840L-336 849L-288 860L-264 865L-216 874L-192 892L-168 916L-140 936L-96 947L-72 936L-56 888L-47 864L-24 824L0 806L27 792L70 768L96 750L120 734L144 715L174 696L180 648L183 600L182 552L180 504L178 456L175 408L183 360L196 336L216 291L230 264L259 240L288 222L302 192L318 168L351 144L384 122L408 108L432 87L456 55L465 24L470 -24L456 -59L432 -82L402 -96L369 -120L336 -136Z"/><path class="curva" d="M72 127L48 158L41 192L56 216L76 216L96 192L120 163L120 127L72 127ZM-24 598L-48 614L-72 632L-103 648L-144 651L-187 672L-216 690L-264 691L-312 676L-334 648L-360 629L-368 672L-360 700L-312 705L-272 720L-240 744L-216 748L-168 748L-144 729L-120 701L-96 687L-61 672L-24 652L0 645L35 624L51 600L24 585L-24 598Z"/><g class="m m-paese"><circle cx="2181" cy="-1006" r="34"/><text x="2265" y="-1090" text-anchor="start">San Vincenzo</text></g><g class="m m-luogo"><circle cx="2274" cy="-437" r="34"/><text x="2358" y="-413" text-anchor="start">Lo scalo</text></g><g class="m m-paese"><circle cx="-1916" cy="831" r="34"/><text x="-2000" y="747" text-anchor="end">Ginostra</text></g><g class="m m-cima"><circle cx="91" cy="289" r="34"/><text x="175" y="229" text-anchor="start">La cima · 924 m</text></g><g class="m m-pericolo"><circle cx="1917" cy="72" r="34"/><text x="2001" y="96" text-anchor="start">Campo dei predoni</text></g><g class="m m-pericolo"><circle cx="-1924" cy="1004" r="34"/><text x="-2008" y="1208" text-anchor="end">La nave in secca</text></g><g class="m m-pericolo"><circle cx="229" cy="-1801" r="34"/><text x="265" y="-1897" text-anchor="start">Semaforo vecchio</text></g><g class="m m-luogo"><circle cx="3355" cy="-2568" r="34"/><text x="3271" y="-2544" text-anchor="end">Strombolicchio</text></g><g class="m m-luogo"><circle cx="1467" cy="-1754" r="34"/><text x="1551" y="-1730" text-anchor="start">La grotta</text></g><text class="zona" transform="translate(-1010 -560) rotate(-40)" text-anchor="middle">Sciara del Fuoco</text><text class="mare" x="3340" y="2450" text-anchor="end">Mar Tirreno</text><text class="coord" x="-3050" y="-2530">38°47′38″ N · 15°12′47″ E</text><g class="scala"><path d="M-3050 2450h1000"/><path d="M-3050 2420v60M-2550 2430v40M-2050 2420v60"/><text x="-3050" y="2360">0</text><text x="-2050" y="2360" text-anchor="middle">1 km</text></g></svg>
+  <div class="wrap hero-grid">
+    <p class="eyebrow">Prova giocabile · novembre 2026 · per chi viene a giocare</p>
+    <h1>Iddu</h1>
+    <p class="lead">Quattro forestieri su un'isola-vulcano che ogni sera accende un fuoco per tenere buono il monte. Mentre esplorate, combattete e sopravvivete, il paese, i predoni e la cenere vanno avanti per conto loro.</p>
+    <ul class="facts">
+      <li><b>2 giocatori</b> + 2 compagni guidati dall'IA</li>
+      <li><b>Nel browser</b>, niente da installare</li>
+      <li><b>Stromboli vera</b>: 7,6 km di lato, cima a 924 m</li>
+      <li><b>1 ora di gioco</b> = 1 minuto vero</li>
+    </ul>
+    <div class="window">
+      <video id="v-isola" src="clip/isola.mp4" poster="clip/isola.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Clip: l'isola al tramonto, dal prato sopra il paese"></video>
+    </div>
+    <nav class="jump" aria-label="Sezioni"><a href="#entra">Come si entra</a><a href="#clip">Le clip</a><a href="#storia">La storia</a><a href="#personaggi">I quattro</a><a href="#mondo">Il mondo</a><a href="#combattimento">Il combattimento</a><a href="#fronti">I due guai</a><a href="#abitanti">Gli abitanti</a><a href="#vivere">Sopravvivere</a><a href="#luoghi">L'isola</a><a href="#grafica">Prima e dopo</a><a href="#provare">Che cosa provare</a><a href="#limiti">Che cosa non è ancora</a><a href="#fatto">Com'è fatto</a></nav>
+  </div>
+</header>
+
+<main>
+<section id="entra">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Per giocare</p>
+      <h2>Come si entra</h2>
+    </div>
+    <ol class="steps">
+      <li><h3>Davide accende il gioco</h3><p class="dim">Il gioco gira sul suo computer. Quando lo avvia ti manda un secondo link, che finisce in <span style="font-family:var(--data);font-size:.9em">trycloudflare.com</span> e cambia ogni volta.</p></li>
+      <li><h3>Apri quel link</h3><p class="dim">Con Chrome o Edge, su un computer con mouse e tastiera. Niente da scaricare, niente account. Dal telefono non si gioca.</p></li>
+      <li><h3>Scegli chi sei</h3><p class="dim">Scrivi il nome e prendi uno dei quattro. Sei nel suo stesso mondo; gli altri due personaggi li guida l'IA e vi seguono.</p></li>
+    </ol>
+    <ul class="keys" aria-label="Tasti">
+      <li><kbd>W A S D</kbd> muovi</li>
+      <li><kbd>Mouse</kbd> guarda (clic sul gioco per catturarlo)</li>
+      <li><kbd>Clic sin.</kbd> colpo, in catena</li>
+      <li><kbd>Clic des.</kbd> colpo pesante, o parata con Calador</li>
+      <li><kbd>Spazio</kbd> schivata</li>
+      <li><kbd>Shift</kbd> corri</li>
+      <li><kbd>Q</kbd> <kbd>F</kbd> <kbd>R</kbd> le tre abilità</li>
+      <li><kbd>Tab</kbd> aggancia il nemico</li>
+      <li><kbd>E</kbd> usa, raccogli, parla</li>
+      <li><kbd>C</kbd> fiaschetta · <kbd>V</kbd> mangia</li>
+      <li><kbd>Z</kbd> riposa (il tempo corre)</li>
+      <li><kbd>I</kbd> zaino · <kbd>J</kbd> diario · <kbd>M</kbd> mappa</li>
+    </ul>
+    <p class="note">Se cadi o ricarichi la pagina rientri da solo, con lo stesso personaggio, nello stesso punto e con lo stesso zaino. Nel frattempo il tuo personaggio resta nel mondo, guidato dall'IA. Se il mouse non si lascia catturare, tieni premuto il tasto destro per girare la visuale.</p>
+  </div>
+</section>
+
+<section id="clip">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Dal gioco che gira</p>
+      <h2>Come si presenta</h2>
+      <p class="dim">Clip registrate dal browser, senza montaggio: l'interfaccia è quella che vedrai.</p>
+    </div>
+    <div class="clips">
+      <article class="clip">
+        <div class="window"><video id="v-paese" src="clip/paese.mp4" poster="clip/paese.jpg" muted loop playsinline preload="none" aria-label="Clip: Il paese e il Fuoco di Vespro"></video><button class="play" type="button" aria-controls="v-paese">▶ RIPRODUCI</button></div>
+        <h3>Il paese e il Fuoco di Vespro</h3>
+        <p>Alle 18 la piazza si riempie e il braciere si accende, se qualcuno ha portato la legna.</p>
+      </article>
+      <article class="clip">
+        <div class="window"><video id="v-scontro" src="clip/scontro.mp4" poster="clip/scontro.jpg" muted loop playsinline preload="none" aria-label="Clip: Lo scontro"></video><button class="play" type="button" aria-controls="v-scontro">▶ RIPRODUCI</button></div>
+        <h3>Lo scontro</h3>
+        <p>Tempo reale, niente turni: segni a terra che si riempiono, schivata, colpo pesante, abilità.</p>
+      </article>
+      <article class="clip">
+        <div class="window"><video id="v-forme" src="clip/forme.mp4" poster="clip/forme.jpg" muted loop playsinline preload="none" aria-label="Clip: Le forme di Karkàn"></video><button class="play" type="button" aria-controls="v-forme">▶ RIPRODUCI</button></div>
+        <h3>Le forme di Karkàn</h3>
+        <p>Lupo per combattere, cavallo per attraversare l'isola.</p>
+      </article>
+      <article class="clip">
+        <div class="window"><video id="v-vulcano" src="clip/vulcano.mp4" poster="clip/vulcano.jpg" muted loop playsinline preload="none" aria-label="Clip: Iddu, di notte"></video><button class="play" type="button" aria-controls="v-vulcano">▶ RIPRODUCI</button></div>
+        <h3>Iddu, di notte</h3>
+        <p>La Sciara del Fuoco con le sue braci. Il vulcano erutta quando vuole lui.</p>
+      </article>
+      <article class="clip">
+        <div class="window"><video id="v-parlare" src="clip/parlare.mp4" poster="clip/parlare.jpg" muted loop playsinline preload="none" aria-label="Clip: Parlare con gli abitanti"></video><button class="play" type="button" aria-controls="v-parlare">▶ RIPRODUCI</button></div>
+        <h3>Parlare con gli abitanti</h3>
+        <p>Scrivi quello che vuoi dire: rispondono nel loro carattere, e se la ricordano.</p>
+      </article>
+      <article class="clip">
+        <div class="window"><video id="v-mare" src="clip/mare.mp4" poster="clip/mare.jpg" muted loop playsinline preload="none" aria-label="Clip: La riva al tramonto"></video><button class="play" type="button" aria-controls="v-mare">▶ RIPRODUCI</button></div>
+        <h3>La riva al tramonto</h3>
+        <p>Sabbia nera, onde, la strada di luce del sole sull'acqua.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="storia"><div class="wrap">
+  <div class="head"><p class="eyebrow">Da dove si comincia</p><h2>La storia</h2></div>
+  <div class="cols"><div class="prose"><p>Una tempesta fuori stagione vi ha presi al largo di Lipari e non vi ha più mollati. La barca ha ceduto a un tiro di sasso dal molo di Scari.</p><p>Siete a Strongyle, la rotonda. Il monte che fuma sopra le case qui lo chiamano Iddu, «Lui», e gli danno del voi.</p><p>Il paese ha tre guai, e ve li dicono prima ancora di chiedervi il nome: i predoni della Capitana Solfara accampati a sud, la Cenere che di notte scende dal monte, e Zù Nino che è troppo vecchio per il suo mestiere.</p><p>Il mestiere di Zù Nino è il Fuoco di Vespro: ogni sera alle sei, nel braciere in piazza, due pezzi di legna. Finché arde, dicono, Iddu sta buono.</p><p>Nessuno vi aspetta e nessuno aspetta voi: il muratore mura, la fornaia inforna, i predoni si avvicinano. Avete fame, siete zuppi, e tra poco fa buio.</p><p>Fate come vi pare. L'isola va avanti lo stesso.</p></div><figure style="margin:0"><div class="window"><img src="img/dopo-02-molo.jpg" alt="Lo scalo di Scari al tramonto, con il monte che fuma"></div></figure></div>
+  <p class="note">Fantasy mediterraneo, asciutto, con ironia di paese: mare, pietra nera, capperi, vento, superstizione. Nessun narratore e nessuna missione affidata: le cose si vedono succedere, e chi vuole sapere chiede in giro.</p>
+</div></section>
+
+<section id="personaggi">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Il gruppo</p>
+      <h2>I quattro</h2>
+      <p class="dim">Due li giocate voi, due li guida l'IA: seguono, combattono, commentano quello che succede, e ogni tanto partono da soli. Il gruppo sale di livello insieme.</p>
+    </div>
+    <div class="party">
+      <article class="hero-card" style="--c:#8dff9a">
+        <div class="who"><img src="ritratti/karkan.webp" alt="Karkàn" width="72" height="72"><div><h3>Karkàn</h3><p class="role">DRUIDO DELLA LUNA</p></div></div>
+        <ul><li><b>Rovi</b> — radici dove miri: ferite e nemici inchiodati</li><li><b>Forma di lupo</b> — veloce, morsi rapidi</li><li><b>Forma di cavallo</b> — per attraversare l'isola</li></ul>
+      </article>
+      <article class="hero-card" style="--c:#ffd36b">
+        <div class="who"><img src="ritratti/calador.webp" alt="Calador" width="72" height="72"><div><h3>Calador</h3><p class="role">PALADINO</p></div></div>
+        <ul><li><b>Carica del giuramento</b> — travolge e sbilancia</li><li><b>Imposizione delle mani</b> — cura chi è vicino</li><li><b>Sfida</b> — i nemici si voltano verso di lui</li></ul>
+        <p><span class="tag">MODELLO NUOVO, DAI RIFERIMENTI</span></p>
+      </article>
+      <article class="hero-card" style="--c:#b48cff">
+        <div class="who"><img src="ritratti/lacrime.webp" alt="Lacrime Nere" width="72" height="72"><div><h3>Lacrime Nere</h3><p class="role">BARDO</p></div></div>
+        <ul><li><b>Nota stonata</b> — interrompe i colpi e ributta indietro</li><li><b>Ballata del coraggio</b> — chi è vicino colpisce più forte</li><li><b>Ninna nanna</b> — addormenta i nemici comuni</li></ul>
+        <p><span class="tag">ANCORA UNA CONTROFIGURA</span></p>
+      </article>
+      <article class="hero-card" style="--c:#ffae42">
+        <div class="who"><img src="ritratti/mantice.webp" alt="Mastro Mantice" width="72" height="72"><div><h3>Mastro Mantice</h3><p class="role">ARTIFICIERE</p></div></div>
+        <ul><li><b>Pignatta</b> — una pentola di polvere che esplode e incendia</li><li><b>Granchio d'ottone</b> — una torretta a molla</li><li><b>Soffio del mantice</b> — un cono di fuoco</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="mondo">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Il primo pilastro</p>
+      <h2>Il mondo non aspetta</h2>
+      <p class="dim">L'isola ha un orologio e va avanti anche quando non guardate, anche a gioco spento (fino a un giorno). Non potete essere in due posti insieme: è lì che nascono le scelte.</p>
+    </div>
+    <div class="world">
+      <div>
+        <svg class="carta" viewBox="-3350 -2950 6950 5700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Carta dell'isola: curve di livello ogni 100 metri e luoghi del gioco"><path class="costa" d="M3264 -2617L3253 -2592L3277 -2568L3298 -2544L3336 -2521L3384 -2538L3408 -2562L3432 -2592L3408 -2618L3384 -2614L3336 -2614L3311 -2616L3264 -2617ZM672 -1993L648 -1992L600 -1984L552 -1974L515 -1968L480 -1966L432 -1966L408 -1968L384 -1967L336 -1966L288 -1947L264 -1940L219 -1920L192 -1909L168 -1894L129 -1872L96 -1856L72 -1845L32 -1824L1 -1800L-21 -1776L-40 -1752L-53 -1728L-72 -1688L-93 -1656L-111 -1632L-127 -1608L-148 -1584L-168 -1549L-189 -1512L-202 -1488L-216 -1452L-231 -1416L-240 -1390L-263 -1344L-278 -1320L-295 -1296L-329 -1272L-360 -1260L-384 -1248L-431 -1224L-455 -1200L-480 -1182L-504 -1158L-527 -1128L-545 -1104L-564 -1080L-583 -1056L-607 -1032L-636 -1008L-672 -984L-696 -965L-720 -948L-745 -936L-792 -924L-816 -904L-840 -884L-864 -864L-900 -840L-928 -816L-959 -792L-984 -775L-1008 -752L-1032 -739L-1057 -720L-1082 -696L-1107 -672L-1129 -648L-1152 -622L-1176 -589L-1200 -563L-1224 -543L-1248 -522L-1272 -500L-1320 -460L-1344 -442L-1368 -426L-1406 -408L-1440 -384L-1464 -373L-1490 -360L-1536 -343L-1560 -328L-1584 -311L-1632 -297L-1680 -289L-1708 -288L-1752 -276L-1800 -271L-1848 -269L-1896 -272L-1944 -276L-1992 -284L-2016 -294L-2064 -290L-2064 -286L-2064 -244L-2088 -232L-2088 -208L-2082 -168L-2112 -154L-2112 -129L-2088 -96L-2088 -72L-2091 -48L-2088 -15L-2086 24L-2091 48L-2109 96L-2117 120L-2136 160L-2160 176L-2184 198L-2208 223L-2232 253L-2266 264L-2232 288L-2232 289L-2235 336L-2232 361L-2226 408L-2208 449L-2184 464L-2180 504L-2172 552L-2163 600L-2136 622L-2136 627L-2155 672L-2125 696L-2088 718L-2064 743L-2048 768L-2037 792L-2023 840L-2012 864L-1992 895L-1968 912L-1944 943L-1944 968L-1944 993L-1913 1008L-1872 1024L-1855 1056L-1843 1080L-1824 1120L-1807 1152L-1789 1176L-1768 1200L-1752 1229L-1728 1253L-1702 1272L-1680 1309L-1656 1339L-1633 1368L-1624 1392L-1608 1418L-1584 1459L-1569 1488L-1552 1512L-1536 1541L-1499 1560L-1464 1570L-1416 1566L-1368 1574L-1321 1560L-1296 1558L-1248 1560L-1224 1571L-1176 1581L-1152 1586L-1104 1603L-1079 1608L-1032 1615L-1001 1632L-983 1656L-960 1700L-936 1712L-901 1728L-867 1752L-848 1776L-834 1800L-805 1824L-782 1848L-762 1872L-740 1896L-718 1920L-696 1944L-672 1971L-647 1992L-624 2017L-579 2040L-552 2057L-528 2072L-504 2089L-471 2112L-438 2136L-408 2156L-384 2173L-360 2194L-336 2219L-312 2241L-288 2263L-264 2291L-240 2318L-216 2347L-192 2370L-168 2384L-120 2395L-96 2403L-48 2423L-24 2431L24 2448L48 2453L96 2463L144 2464L192 2457L222 2448L264 2424L288 2407L312 2396L360 2377L384 2354L408 2329L432 2304L453 2280L470 2256L481 2232L504 2197L528 2166L552 2137L576 2113L600 2095L624 2075L648 2054L672 2031L696 2009L720 1987L744 1967L768 1932L792 1901L816 1889L864 1892L912 1889L960 1892L1008 1892L1052 1896L1080 1899L1107 1896L1152 1881L1200 1872L1209 1848L1222 1800L1230 1776L1248 1733L1258 1704L1271 1656L1284 1632L1296 1599L1308 1560L1320 1521L1334 1488L1344 1463L1368 1440L1388 1392L1400 1368L1416 1321L1429 1296L1439 1248L1443 1224L1450 1176L1449 1128L1453 1080L1464 1041L1476 1008L1469 960L1454 936L1444 888L1453 840L1464 813L1487 768L1505 744L1512 696L1526 648L1539 624L1558 576L1571 552L1586 528L1608 491L1632 461L1656 432L1676 408L1697 384L1725 360L1752 339L1776 315L1800 294L1824 270L1848 249L1872 231L1896 210L1920 179L1938 144L1946 120L1965 72L1980 48L1992 19L2016 -23L2036 -48L2046 -72L2064 -109L2087 -144L2103 -168L2117 -192L2136 -222L2160 -251L2184 -285L2208 -312L2225 -336L2243 -360L2262 -384L2280 -409L2306 -432L2328 -477L2348 -504L2374 -528L2400 -550L2419 -576L2434 -600L2470 -624L2496 -647L2514 -672L2522 -696L2532 -744L2545 -768L2557 -816L2568 -852L2574 -888L2592 -919L2603 -960L2618 -984L2623 -1032L2616 -1062L2592 -1085L2568 -1108L2544 -1145L2522 -1176L2497 -1200L2477 -1224L2460 -1248L2424 -1262L2400 -1275L2371 -1296L2346 -1320L2328 -1349L2304 -1382L2256 -1373L2208 -1378L2160 -1384L2113 -1392L2088 -1393L2040 -1399L2016 -1418L1969 -1440L1944 -1450L1921 -1488L1896 -1503L1872 -1520L1844 -1536L1824 -1568L1800 -1588L1772 -1608L1732 -1632L1704 -1642L1676 -1656L1644 -1680L1608 -1694L1584 -1710L1555 -1728L1527 -1752L1488 -1762L1460 -1776L1416 -1799L1387 -1800L1344 -1819L1296 -1808L1248 -1805L1200 -1807L1152 -1819L1111 -1824L1080 -1835L1032 -1846L1008 -1852L960 -1868L936 -1876L896 -1896L864 -1912L840 -1928L816 -1944L768 -1966L744 -1976L696 -1990L672 -1993Z"/><path class="curva" d="M336 -1873L312 -1857L288 -1842L240 -1829L195 -1824L168 -1803L144 -1786L116 -1776L86 -1752L64 -1728L46 -1704L31 -1656L21 -1632L0 -1597L-22 -1560L-45 -1536L-59 -1512L-63 -1464L-72 -1426L-91 -1392L-111 -1368L-120 -1344L-140 -1296L-167 -1272L-192 -1255L-206 -1224L-216 -1192L-240 -1161L-259 -1128L-279 -1104L-312 -1084L-336 -1070L-360 -1048L-384 -1018L-408 -988L-432 -962L-456 -939L-480 -919L-504 -902L-530 -888L-576 -865L-600 -853L-625 -840L-668 -816L-696 -802L-720 -788L-744 -767L-780 -744L-816 -722L-840 -704L-864 -683L-888 -661L-912 -639L-936 -619L-976 -600L-1000 -576L-1026 -552L-1048 -528L-1068 -504L-1087 -480L-1108 -456L-1134 -432L-1164 -408L-1199 -384L-1224 -365L-1248 -346L-1272 -330L-1307 -312L-1344 -295L-1368 -285L-1412 -264L-1440 -249L-1464 -236L-1508 -216L-1536 -206L-1583 -192L-1608 -187L-1656 -179L-1704 -175L-1752 -170L-1776 -159L-1776 -125L-1775 -96L-1790 -72L-1797 -24L-1800 0L-1841 0L-1872 -4L-1896 7L-1920 37L-1944 64L-1968 82L-1992 98L-2016 123L-2040 153L-2057 192L-2067 216L-2088 251L-2112 283L-2126 312L-2118 360L-2103 384L-2083 408L-2064 443L-2038 456L-1992 472L-1944 480L-1914 480L-1872 481L-1848 474L-1811 480L-1805 528L-1776 535L-1755 576L-1737 600L-1719 624L-1720 672L-1711 720L-1700 744L-1676 768L-1651 792L-1637 840L-1648 888L-1632 917L-1608 941L-1584 965L-1560 1003L-1539 1032L-1526 1056L-1508 1080L-1464 1102L-1446 1128L-1422 1152L-1392 1163L-1368 1142L-1349 1176L-1344 1210L-1329 1248L-1296 1272L-1272 1284L-1248 1306L-1224 1339L-1198 1344L-1181 1392L-1176 1416L-1152 1444L-1125 1464L-1090 1488L-1056 1500L-1009 1488L-1005 1488L-960 1502L-936 1518L-912 1560L-892 1584L-864 1587L-816 1594L-792 1619L-761 1632L-735 1656L-716 1680L-720 1704L-741 1752L-713 1776L-695 1800L-672 1839L-648 1859L-624 1875L-592 1896L-552 1919L-504 1914L-480 1930L-456 1953L-432 1972L-384 1987L-371 2016L-358 2040L-312 2063L-290 2088L-264 2109L-234 2088L-216 2064L-168 2058L-144 2087L-120 2109L-96 2129L-48 2130L-3 2112L24 2092L48 2084L96 2075L120 2095L168 2090L192 2064L211 2016L226 1992L236 1944L240 1916L264 1894L303 1896L312 1937L336 1966L351 1992L384 2009L426 1992L456 1989L480 1998L507 1992L545 1968L571 1944L591 1920L614 1896L642 1872L658 1848L665 1800L677 1776L696 1749L720 1705L744 1689L792 1700L816 1708L840 1737L888 1748L936 1748L960 1758L1006 1752L1032 1743L1080 1733L1104 1723L1128 1691L1134 1656L1148 1608L1159 1584L1165 1536L1183 1512L1203 1488L1215 1440L1199 1416L1200 1382L1224 1361L1248 1344L1277 1320L1288 1272L1279 1224L1296 1184L1318 1152L1332 1128L1328 1080L1341 1032L1359 1008L1371 984L1358 960L1320 951L1272 942L1262 912L1275 888L1272 846L1272 839L1296 801L1320 782L1344 756L1368 729L1373 696L1351 672L1351 624L1344 588L1333 552L1344 520L1356 480L1390 456L1416 448L1464 433L1476 408L1468 360L1482 312L1507 288L1536 268L1560 252L1608 253L1656 252L1685 240L1709 216L1728 192L1769 168L1800 145L1818 120L1795 96L1771 72L1752 40L1728 6L1728 -24L1752 -31L1800 -31L1834 -24L1849 -24L1881 -48L1895 -96L1872 -127L1864 -168L1884 -192L1916 -216L1925 -240L1939 -288L1920 -312L1913 -360L1896 -398L1890 -432L1896 -456L1889 -480L1872 -514L1850 -552L1835 -576L1827 -624L1818 -648L1800 -674L1765 -696L1755 -744L1744 -768L1704 -784L1673 -792L1656 -825L1646 -864L1637 -912L1608 -921L1580 -936L1560 -981L1512 -981L1480 -984L1464 -1026L1455 -1056L1416 -1078L1392 -1103L1368 -1119L1341 -1128L1314 -1152L1292 -1176L1275 -1224L1248 -1242L1200 -1241L1176 -1254L1152 -1284L1130 -1320L1144 -1368L1131 -1416L1123 -1440L1104 -1479L1080 -1493L1032 -1503L992 -1512L984 -1546L960 -1572L912 -1583L912 -1591L912 -1612L895 -1656L864 -1677L840 -1687L792 -1697L744 -1702L696 -1702L672 -1709L624 -1728L599 -1752L576 -1793L552 -1822L528 -1841L504 -1855L456 -1851L432 -1843L384 -1832L363 -1872L336 -1873Z"/><path class="curva" d="M96 -1444L72 -1434L48 -1401L41 -1368L23 -1344L-15 -1320L-27 -1296L-45 -1248L-58 -1224L-75 -1200L-96 -1175L-120 -1149L-144 -1115L-160 -1080L-162 -1032L-157 -984L-160 -936L-169 -912L-192 -884L-217 -864L-264 -841L-288 -836L-336 -824L-361 -816L-408 -801L-432 -792L-480 -773L-504 -762L-544 -744L-576 -728L-600 -715L-633 -696L-672 -672L-696 -657L-720 -641L-746 -624L-779 -600L-812 -576L-840 -555L-864 -535L-888 -515L-912 -493L-936 -470L-960 -441L-980 -408L-994 -384L-1010 -360L-1032 -332L-1056 -311L-1103 -288L-1128 -282L-1176 -272L-1219 -264L-1248 -254L-1274 -240L-1302 -216L-1324 -192L-1356 -168L-1392 -152L-1416 -144L-1464 -127L-1494 -120L-1536 -97L-1544 -72L-1547 -24L-1546 24L-1565 48L-1578 96L-1571 144L-1563 192L-1561 240L-1550 264L-1536 291L-1512 323L-1512 349L-1536 372L-1547 408L-1556 456L-1536 492L-1512 523L-1512 545L-1512 557L-1488 600L-1494 624L-1491 672L-1464 692L-1450 720L-1440 746L-1424 792L-1409 816L-1392 847L-1368 864L-1320 876L-1289 888L-1288 936L-1272 967L-1248 990L-1209 1008L-1179 1032L-1200 1059L-1200 1092L-1189 1128L-1183 1176L-1152 1198L-1128 1202L-1104 1235L-1086 1272L-1090 1320L-1076 1344L-1051 1368L-1008 1392L-960 1379L-912 1372L-864 1390L-850 1416L-840 1452L-797 1464L-768 1474L-744 1462L-716 1464L-696 1501L-672 1534L-648 1560L-638 1584L-624 1623L-600 1654L-594 1680L-581 1728L-563 1752L-528 1773L-504 1777L-456 1778L-419 1800L-393 1824L-360 1845L-336 1858L-312 1875L-288 1897L-265 1872L-253 1848L-225 1824L-204 1824L-170 1848L-144 1871L-120 1896L-102 1920L-79 1944L-66 1944L-24 1925L20 1920L48 1911L96 1906L123 1896L136 1848L148 1824L174 1800L209 1776L219 1776L262 1800L266 1800L294 1776L312 1740L336 1717L360 1752L384 1773L408 1790L432 1815L456 1827L480 1822L528 1804L540 1776L550 1728L568 1704L578 1680L594 1632L602 1608L595 1584L613 1560L647 1536L672 1522L704 1512L722 1512L768 1531L792 1542L816 1576L840 1586L879 1584L912 1561L936 1559L984 1537L1013 1536L1025 1488L1032 1448L1056 1417L1073 1392L1064 1344L1090 1320L1115 1296L1138 1272L1163 1248L1152 1205L1136 1176L1152 1129L1176 1121L1196 1080L1205 1056L1208 1008L1200 978L1176 947L1152 925L1128 907L1089 888L1104 841L1128 830L1165 816L1183 792L1199 744L1206 720L1240 696L1252 672L1245 648L1224 613L1200 600L1177 552L1176 528L1177 504L1180 456L1193 408L1215 384L1248 376L1296 368L1344 367L1359 336L1351 288L1350 240L1369 216L1400 192L1422 168L1440 135L1480 120L1512 117L1536 123L1566 120L1590 96L1612 72L1608 44L1584 17L1560 -7L1540 -48L1560 -93L1584 -117L1608 -134L1632 -149L1661 -168L1643 -192L1631 -216L1632 -240L1631 -264L1635 -288L1632 -323L1608 -357L1595 -384L1584 -413L1560 -445L1540 -480L1536 -511L1512 -546L1505 -576L1488 -602L1446 -624L1451 -672L1440 -713L1416 -735L1392 -755L1369 -792L1356 -816L1331 -840L1316 -864L1296 -896L1272 -922L1224 -927L1200 -940L1169 -960L1146 -984L1128 -1016L1080 -1025L1040 -1032L1021 -1056L1027 -1104L1008 -1143L960 -1147L914 -1152L906 -1176L888 -1220L864 -1236L845 -1272L837 -1296L816 -1333L773 -1320L748 -1296L721 -1272L696 -1254L691 -1296L703 -1320L696 -1361L670 -1368L624 -1379L576 -1381L552 -1411L528 -1427L495 -1440L456 -1444L432 -1438L408 -1442L360 -1447L312 -1458L264 -1448L216 -1451L168 -1455L120 -1450L96 -1444Z"/><path class="curva" d="M144 -1225L120 -1224L86 -1200L74 -1152L59 -1128L24 -1110L0 -1103L-24 -1060L-27 -1032L-29 -984L-21 -960L0 -928L12 -888L9 -840L0 -808L-24 -781L-48 -760L-72 -722L-96 -710L-132 -696L-168 -692L-216 -689L-264 -683L-312 -674L-336 -670L-384 -659L-417 -648L-456 -633L-480 -623L-526 -600L-552 -586L-576 -573L-611 -552L-645 -528L-672 -507L-696 -487L-720 -466L-744 -445L-768 -424L-792 -402L-816 -376L-840 -338L-846 -312L-861 -264L-883 -240L-912 -219L-936 -209L-984 -193L-1008 -187L-1056 -178L-1104 -171L-1128 -165L-1164 -144L-1180 -120L-1197 -72L-1223 -48L-1248 -36L-1277 -24L-1320 -14L-1347 0L-1344 41L-1340 72L-1329 120L-1344 155L-1353 192L-1351 240L-1323 264L-1317 288L-1334 312L-1348 336L-1360 384L-1370 408L-1383 456L-1366 480L-1360 528L-1353 576L-1344 602L-1320 648L-1303 672L-1293 696L-1276 744L-1260 768L-1238 792L-1200 809L-1200 832L-1200 846L-1173 864L-1128 875L-1080 885L-1056 909L-1032 919L-991 912L-981 912L-984 960L-996 984L-991 1032L-1008 1067L-1033 1080L-1032 1113L-1008 1136L-984 1157L-952 1176L-953 1224L-936 1258L-888 1257L-864 1247L-840 1255L-815 1272L-787 1296L-755 1320L-720 1336L-672 1325L-646 1344L-624 1371L-600 1392L-567 1416L-545 1440L-529 1488L-528 1536L-513 1560L-500 1584L-480 1617L-456 1639L-408 1642L-372 1656L-350 1680L-335 1704L-293 1704L-275 1680L-247 1656L-216 1652L-192 1663L-168 1682L-120 1703L-96 1727L-79 1752L-48 1773L0 1761L24 1752L59 1728L80 1704L98 1680L122 1656L168 1642L216 1636L249 1632L263 1584L288 1582L312 1595L349 1608L384 1618L423 1632L456 1638L472 1608L480 1574L490 1536L499 1488L506 1464L528 1426L552 1410L586 1392L624 1380L672 1380L702 1368L730 1368L765 1392L792 1404L826 1416L859 1416L878 1392L895 1368L898 1320L891 1272L925 1248L960 1226L984 1208L1008 1185L1030 1152L1020 1104L1032 1073L1060 1056L1069 1008L1056 977L1015 960L998 936L960 917L936 904L914 864L933 816L940 792L953 744L984 729L1032 731L1080 731L1101 696L1103 648L1105 624L1080 602L1056 578L1032 556L1009 528L1014 480L1020 432L1027 384L1034 360L1056 319L1080 294L1104 282L1143 264L1172 264L1200 282L1235 264L1248 228L1258 192L1272 155L1296 133L1320 114L1320 76L1320 67L1344 42L1379 24L1406 0L1412 -48L1415 -96L1420 -120L1416 -162L1411 -192L1392 -227L1376 -264L1365 -288L1347 -336L1324 -360L1309 -384L1296 -415L1272 -435L1254 -480L1225 -504L1224 -540L1200 -557L1200 -599L1212 -624L1200 -657L1176 -681L1135 -696L1127 -720L1080 -736L1055 -744L1032 -774L1008 -802L984 -826L960 -852L936 -872L897 -888L864 -890L816 -911L793 -936L768 -948L744 -984L736 -1008L696 -1030L672 -1040L646 -1056L615 -1056L590 -1032L576 -1002L552 -1025L534 -1056L527 -1080L528 -1116L530 -1152L504 -1163L456 -1168L432 -1177L384 -1193L360 -1206L312 -1215L264 -1215L240 -1226L201 -1224L168 -1216L144 -1225Z"/><path class="curva" d="M144 -1011L128 -984L128 -936L122 -888L113 -864L111 -816L96 -776L72 -751L48 -742L0 -727L-14 -696L-24 -661L-48 -641L-84 -624L-120 -611L-159 -600L-192 -590L-240 -576L-264 -569L-312 -555L-336 -546L-380 -528L-408 -515L-432 -503L-466 -480L-496 -456L-522 -432L-543 -408L-565 -384L-592 -360L-621 -336L-648 -313L-672 -290L-696 -264L-719 -240L-740 -216L-758 -192L-775 -168L-793 -144L-816 -116L-840 -96L-888 -85L-936 -89L-971 -72L-981 -24L-993 0L-1032 12L-1080 17L-1104 26L-1145 48L-1139 96L-1154 120L-1163 168L-1176 214L-1176 223L-1152 260L-1152 282L-1170 312L-1176 336L-1200 376L-1209 408L-1204 456L-1212 504L-1210 552L-1199 576L-1180 624L-1166 648L-1136 672L-1104 690L-1080 700L-1055 720L-1032 762L-1008 771L-989 816L-960 824L-936 853L-912 881L-905 912L-888 957L-880 984L-888 1016L-912 1053L-912 1059L-884 1080L-847 1104L-826 1128L-792 1133L-756 1152L-725 1176L-696 1197L-664 1200L-641 1200L-600 1194L-576 1200L-551 1224L-528 1257L-504 1280L-480 1298L-449 1320L-418 1344L-403 1368L-385 1416L-408 1458L-417 1488L-399 1512L-365 1536L-336 1549L-288 1536L-264 1529L-235 1512L-192 1500L-168 1522L-144 1547L-120 1564L-87 1584L-48 1604L0 1594L22 1560L48 1544L92 1536L120 1526L149 1512L185 1488L200 1464L221 1440L264 1429L286 1464L312 1484L336 1490L360 1487L387 1464L408 1429L416 1392L432 1346L456 1336L485 1320L504 1295L528 1264L576 1248L624 1268L672 1258L696 1245L720 1249L768 1252L776 1224L792 1187L816 1165L840 1150L867 1128L888 1103L911 1056L919 1032L912 989L888 964L864 951L840 915L831 888L819 840L810 816L790 792L772 744L782 696L792 667L816 644L864 640L912 640L951 624L937 576L925 552L902 528L887 504L890 480L893 432L904 384L912 352L936 332L961 312L984 286L1009 264L1036 240L1065 216L1086 192L1111 168L1132 144L1143 96L1152 66L1168 24L1176 -15L1190 -48L1197 -96L1188 -144L1176 -172L1159 -216L1146 -240L1114 -288L1104 -313L1086 -360L1066 -384L1047 -408L1032 -446L1025 -480L1008 -516L984 -542L980 -576L936 -597L888 -596L840 -595L816 -608L792 -635L768 -669L747 -696L732 -696L717 -696L673 -720L672 -746L624 -767L611 -792L600 -821L552 -829L523 -816L480 -805L464 -840L467 -888L456 -917L432 -938L396 -960L360 -964L312 -971L264 -964L216 -980L192 -992L150 -1008L144 -1011Z"/><path class="curva maestra" d="M240 -801L216 -770L192 -747L168 -733L144 -716L120 -687L96 -658L59 -648L40 -624L24 -581L0 -558L-24 -547L-61 -528L-92 -504L-120 -481L-144 -467L-172 -456L-216 -440L-241 -432L-288 -414L-312 -404L-359 -384L-384 -373L-409 -360L-444 -336L-472 -312L-493 -288L-515 -264L-542 -240L-569 -216L-593 -192L-611 -168L-626 -144L-646 -96L-655 -72L-672 -36L-696 -6L-720 22L-742 48L-768 65L-816 68L-864 64L-885 96L-888 141L-912 158L-936 173L-978 192L-982 240L-988 264L-997 312L-1008 360L-1028 384L-1034 408L-1052 456L-1055 504L-1048 552L-1039 600L-1028 624L-996 648L-960 667L-960 696L-966 720L-937 744L-912 758L-888 775L-861 792L-840 824L-816 849L-797 888L-790 912L-773 960L-770 1008L-752 1032L-720 1054L-696 1063L-660 1080L-624 1089L-576 1092L-541 1104L-504 1110L-464 1128L-432 1145L-408 1167L-384 1183L-360 1202L-340 1248L-326 1272L-312 1301L-294 1344L-274 1368L-240 1372L-216 1360L-168 1365L-144 1377L-120 1395L-82 1416L-69 1416L-24 1406L24 1398L64 1392L96 1379L110 1344L120 1301L141 1272L161 1248L190 1224L216 1220L233 1248L249 1272L266 1296L288 1320L336 1325L356 1296L367 1272L387 1248L409 1224L432 1187L456 1156L480 1142L528 1139L552 1127L576 1132L624 1128L647 1104L672 1083L696 1068L720 1049L744 1016L746 984L739 960L720 919L706 888L713 840L705 792L682 768L672 737L662 696L661 648L672 624L696 599L720 570L734 528L739 480L733 432L735 384L744 356L767 312L781 288L796 264L816 233L840 201L864 177L888 156L912 136L936 119L954 72L960 44L979 0L981 -48L980 -96L963 -144L944 -168L929 -192L912 -222L888 -259L869 -288L854 -312L840 -342L828 -384L792 -408L768 -416L737 -432L696 -455L672 -469L648 -481L604 -504L576 -525L552 -550L538 -576L532 -624L524 -648L480 -660L432 -653L397 -672L381 -696L360 -744L336 -760L312 -772L285 -792L240 -801Z"/><path class="curva" d="M192 -600L216 -607L264 -607L288 -600L312 -569L336 -540L360 -523L390 -504L410 -480L432 -456L465 -432L493 -408L520 -384L552 -360L573 -336L592 -312L619 -288L648 -269L672 -260L706 -240L714 -192L728 -168L752 -144L788 -120L803 -96L812 -48L792 -2L777 24L775 72L768 103L741 120L696 142L672 159L648 181L624 212L607 240L594 264L576 307L566 336L553 384L549 408L548 456L533 504L520 528L506 576L500 600L497 648L504 674L527 720L540 744L552 768L572 816L583 840L596 888L576 935L552 959L528 982L504 1003L480 1015L438 1032L408 1044L384 1057L339 1080L312 1085L289 1056L270 1032L240 1014L216 1007L192 1018L168 1035L148 1080L120 1104L96 1121L72 1141L53 1176L48 1212L24 1231L-24 1242L-72 1244L-96 1249L-142 1248L-168 1240L-201 1224L-219 1200L-240 1165L-247 1128L-264 1094L-288 1078L-327 1056L-360 1037L-384 1026L-432 1011L-456 998L-490 984L-528 969L-576 967L-603 960L-648 937L-661 912L-672 875L-696 859L-721 840L-719 816L-739 792L-757 768L-792 747L-808 720L-812 672L-817 648L-834 600L-844 576L-840 538L-826 504L-822 456L-818 408L-828 360L-829 312L-827 264L-814 240L-785 216L-744 206L-704 192L-673 168L-650 144L-631 120L-619 96L-600 57L-576 28L-560 0L-546 -24L-528 -50L-504 -82L-480 -114L-456 -143L-432 -168L-408 -189L-384 -207L-360 -221L-317 -240L-288 -252L-252 -264L-216 -274L-168 -282L-143 -288L-96 -298L-48 -303L0 -295L24 -286L72 -285L96 -300L120 -333L126 -360L125 -408L114 -432L91 -456L72 -502L72 -505L96 -529L144 -542L166 -576L192 -600Z"/><path class="curva" d="M240 -444L218 -408L226 -360L217 -312L211 -288L192 -249L168 -216L143 -192L111 -168L72 -145L48 -136L0 -130L-28 -144L-48 -170L-72 -158L-96 -138L-144 -129L-192 -124L-220 -120L-264 -102L-288 -81L-312 -48L-325 -24L-337 0L-360 24L-370 72L-360 103L-360 144L-366 168L-384 216L-432 204L-475 192L-504 174L-537 192L-566 216L-594 240L-606 264L-624 293L-638 336L-624 384L-612 408L-598 432L-576 472L-563 504L-555 552L-554 600L-571 648L-592 672L-624 692L-648 706L-656 744L-633 768L-610 792L-578 816L-565 840L-528 864L-504 874L-461 888L-432 896L-384 909L-360 912L-312 919L-264 936L-240 951L-216 969L-192 1006L-168 1019L-158 1056L-155 1104L-120 1123L-72 1108L-48 1088L-24 1079L6 1056L24 1032L31 984L43 936L53 912L78 888L99 864L144 840L168 833L216 836L240 849L274 864L305 888L336 895L360 879L384 862L425 840L408 793L384 771L370 744L360 715L342 672L331 648L320 600L322 552L330 504L336 478L349 432L360 398L373 360L384 330L402 288L414 264L432 233L456 201L480 180L504 161L528 132L549 96L576 78L600 71L607 24L622 -24L626 -48L624 -73L600 -101L580 -144L552 -164L528 -177L504 -193L480 -217L456 -252L432 -276L408 -291L375 -312L347 -336L324 -360L306 -384L288 -413L264 -439L240 -444Z"/><path class="curva" d="M336 -136L326 -96L312 -61L288 -32L264 -16L227 0L192 3L168 -4L123 0L96 6L48 21L24 32L0 58L-28 72L-72 80L-96 62L-143 72L-168 82L-192 101L-216 129L-221 168L-219 216L-233 264L-216 306L-192 327L-168 347L-144 365L-120 384L-88 408L-68 432L-68 480L-92 504L-120 519L-144 531L-192 548L-216 555L-263 552L-288 546L-336 534L-375 528L-408 526L-432 529L-459 552L-476 600L-480 624L-486 672L-502 720L-517 744L-504 791L-480 803L-445 816L-408 828L-367 840L-336 849L-288 860L-264 865L-216 874L-192 892L-168 916L-140 936L-96 947L-72 936L-56 888L-47 864L-24 824L0 806L27 792L70 768L96 750L120 734L144 715L174 696L180 648L183 600L182 552L180 504L178 456L175 408L183 360L196 336L216 291L230 264L259 240L288 222L302 192L318 168L351 144L384 122L408 108L432 87L456 55L465 24L470 -24L456 -59L432 -82L402 -96L369 -120L336 -136Z"/><path class="curva" d="M72 127L48 158L41 192L56 216L76 216L96 192L120 163L120 127L72 127ZM-24 598L-48 614L-72 632L-103 648L-144 651L-187 672L-216 690L-264 691L-312 676L-334 648L-360 629L-368 672L-360 700L-312 705L-272 720L-240 744L-216 748L-168 748L-144 729L-120 701L-96 687L-61 672L-24 652L0 645L35 624L51 600L24 585L-24 598Z"/><g class="m m-paese"><circle cx="2181" cy="-1006" r="34"/><text x="2265" y="-1090" text-anchor="start">San Vincenzo</text></g><g class="m m-luogo"><circle cx="2274" cy="-437" r="34"/><text x="2358" y="-413" text-anchor="start">Lo scalo</text></g><g class="m m-paese"><circle cx="-1916" cy="831" r="34"/><text x="-2000" y="747" text-anchor="end">Ginostra</text></g><g class="m m-cima"><circle cx="91" cy="289" r="34"/><text x="175" y="229" text-anchor="start">La cima · 924 m</text></g><g class="m m-pericolo"><circle cx="1917" cy="72" r="34"/><text x="2001" y="96" text-anchor="start">Campo dei predoni</text></g><g class="m m-pericolo"><circle cx="-1924" cy="1004" r="34"/><text x="-2008" y="1208" text-anchor="end">La nave in secca</text></g><g class="m m-pericolo"><circle cx="229" cy="-1801" r="34"/><text x="265" y="-1897" text-anchor="start">Semaforo vecchio</text></g><g class="m m-luogo"><circle cx="3355" cy="-2568" r="34"/><text x="3271" y="-2544" text-anchor="end">Strombolicchio</text></g><g class="m m-luogo"><circle cx="1467" cy="-1754" r="34"/><text x="1551" y="-1730" text-anchor="start">La grotta</text></g><text class="zona" transform="translate(-1010 -560) rotate(-40)" text-anchor="middle">Sciara del Fuoco</text><text class="mare" x="3340" y="2450" text-anchor="end">Mar Tirreno</text><text class="coord" x="-3050" y="-2530">38°47′38″ N · 15°12′47″ E</text><g class="scala"><path d="M-3050 2450h1000"/><path d="M-3050 2420v60M-2550 2430v40M-2050 2420v60"/><text x="-3050" y="2360">0</text><text x="-2050" y="2360" text-anchor="middle">1 km</text></g></svg>
+        <p class="legend"><span><i style="background:var(--brass)"></i>paese e luoghi</span><span><i style="background:var(--lava)"></i>dove c'è pericolo</span><span>curve di livello ogni 100 m, dalla mappa del gioco</span></p>
+      </div>
+      <div>
+        <ul class="beats">
+          <li><span class="when">ogni sera</span><div><b>Alle 18 il Fuoco di Vespro.</b> <span class="dim">Se in piazza c'è legna Zù Nino lo accende e la notte è più quieta. Se manca, la cenere avanza.</span></div></li>
+          <li><span class="when">di giorno</span><div><b>Quindici abitanti con i loro orari.</b> <span class="dim">Lavorano, mangiano, vanno a messa, dormono. Hanno un carattere, un segreto, e chiedono cose al gruppo.</span></div></li>
+          <li><span class="when">a sud</span><div><b>I predoni della Capitana Solfara.</b> <span class="dim">Se nessuno li ferma, di notte scendono agli orti e poi alle case. Il loro campo cresce di giorno in giorno.</span></div></li>
+          <li><span class="when">dal monte</span><div><b>La Cenere.</b> <span class="dim">Sale dal Semaforo vecchio con le sue creature, fino al Guardiano sulla cima. Il vulcano erutta per conto suo.</span></div></li>
+          <li><span class="when">intanto</span><div><b>Il cantiere, i campi, la fame.</b> <span class="dim">Una casa sale a stadi se portate legna e pietra. Si raccoglie, si pesca, si cucina, si forgia; chi non dorme e non mangia colpisce peggio.</span></div></li>
+        </ul>
+        <div class="ia">
+          <h3>Che cosa fa l'IA</h3>
+          <p class="dim">Con gli abitanti si parla scrivendo quello che si vuole: rispondono nel loro carattere, possono mentire, offendersi, seguirvi o chiamare le guardie. I compagni commentano ciò che è appena successo. Un regista lega il giorno di ieri a quello di oggi. Senza IA il gioco gira lo stesso, con battute scritte: è più sordo, non rotto. Un'ora di gioco costa pochi centesimi.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section id="combattimento"><div class="wrap">
+  <div class="head"><p class="eyebrow">Le mani</p><h2>Il combattimento</h2><p class="dim">In tempo reale, sul modello dei souls-like, in versione leggera: si legge l'avversario, si sceglie il momento, si paga ogni errore con il fiato.</p></div>
+  <div class="cols">
+    <ul class="plain">
+      <li><b>Fiato.</b> <span class="dim">Colpi, corsa e capriole lo consumano; torna in fretta se ti fermi, piano se pari.</span></li>
+      <li><b>Capriola.</b> <span class="dim">Quattro metri e mezzo, con un attimo in cui niente ti tocca.</span></li>
+      <li><b>Catene e colpo pesante.</b> <span class="dim">Clic in fila per la catena; il pesante apre gli scudi e sbilancia.</span></li>
+      <li><b>Parata e parata perfetta.</b> <span class="dim">Con Calador: alzare lo scudo all'ultimo istante apre il nemico a un contrattacco doppio.</span></li>
+      <li><b>Colpo alle spalle.</b> <span class="dim">Fa di più: in due conviene tenerne uno occupato.</span></li>
+      <li><b>Segni a terra.</b> <span class="dim">Ogni colpo nemico si annuncia: un bordo che si riempie. Esci o rotola via.</span></li>
+      <li><b>Fiaschette.</b> <span class="dim">Tre sorsi di cura, che tornano riposando a un letto o a un'edicola.</span></li>
+      <li><b>A terra e rialzati.</b> <span class="dim">Chi cade ha venti secondi: un compagno vicino lo rimette in piedi.</span></li>
+    </ul>
+    <div><h3>Chi si incontra</h3><ul class="chips"><li>Predone</li><li>Predone arciere</li><li>Cinereo</li><li>La Capitana Solfara</li><li>Il Guardiano di Cenere</li><li>Predone scudiero</li><li>Il Nostromo</li><li>Cinereo gonfio</li></ul>
+    <p class="dim" style="margin-top:14px">Due capi chiudono i due fronti: la Capitana Solfara al campo dei predoni e il Guardiano di Cenere sul Pizzo. Sulla nave in secca comanda il Nostromo.</p></div>
+  </div>
+</div></section>
+
+<section id="fronti"><div class="wrap">
+  <div class="head"><p class="eyebrow">Se nessuno fa niente</p><h2>I due guai dell'isola</h2><p class="dim">Ognuno sale di un gradino quando lo si lascia stare, e ogni gradino cambia il paese. Si fermano solo andandoci.</p></div>
+  <div class="cols"><div><h3>I predoni della Capitana Solfara</h3><ol class="ladder"><li>I predoni stanno al loro campo, a sud. Per ora guardano il paese come si guarda una dispensa.</li><li>Vedette dei predoni sulla strada a sud della guardiola: contano chi passa e a che ora.</li><li>I predoni hanno razziato gli orti di notte. Raccolto perso, terrazze calpestate: il cibo in paese costa di più.</li><li>I predoni hanno preso un paesano e lo tengono legato al campo. Il suo posto in paese è vuoto.</li><li>I predoni hanno bruciato il cantiere. La casa è tornata un mucchio di pietre nere, Mastro Saro è ferito.</li><li>I predoni hanno preso il molo. Donna Fina è sparita, c'è gente armata in piazza e il paese sta chiuso in casa.</li></ol></div><div><h3>La Cenere</h3><ol class="ladder"><li>Il monte fuma come sempre. La cenere, per ora, cade e resta dove cade.</li><li>Di notte, al Semaforo vecchio, la cenere si alza in piedi: i cinerei.</li><li>I cinerei arrivano fino all'ovile. Capre morte, e Tano che non vuole più dormirci.</li><li>Zù Nino è stato aggredito ed è a letto. Il Fuoco di Vespro, se non lo accendete voi, non lo accende nessuno.</li><li>Cenere sul paese. Se il fuoco è spento, di notte i cinerei entrano in piazza; la gente si barrica.</li><li>Iddu si sveglia. Ogni notte lapilli sul paese, e ogni mattina una casa in meno.</li></ol></div></div>
+</div></section>
+
+<section id="abitanti"><div class="wrap">
+  <div class="head"><p class="eyebrow">Con chi si parla</p><h2>Chi abita l'isola</h2><p class="dim">Quindici persone con un mestiere, degli orari, un carattere e qualcosa che non dicono. Si parla scrivendo quello che si vuole; ogni giorno due di loro chiedono una mano.</p></div>
+  <ul class="people"><li><b>Zù Nino</b><span class="dim">Fuochista e campanaro</span></li><li><b>Agata</b><span class="dim">Ostessa e fornaia</span></li><li><b>Don Liborio</b><span class="dim">Prete di San Vincenzo</span></li><li><b>Gnà Rosa</b><span class="dim">Erborista e levatrice</span></li><li><b>Console Guarnieri</b><span class="dim">Console dell'isola</span></li><li><b>Mastro Saro</b><span class="dim">Muratore</span></li><li><b>Nedda</b><span class="dim">Contadina degli orti</span></li><li><b>Donna Fina</b><span class="dim">Mercante e speziale</span></li><li><b>Vanna</b><span class="dim">Capo dei campieri</span></li><li><b>Cola</b><span class="dim">Campiere</span></li><li><b>Bastiano</b><span class="dim">Pescatore</span></li><li><b>Tano</b><span class="dim">Pastore</span></li><li><b>Messer Lapillo</b><span class="dim">Notaio di Iddu</span></li><li><b>Zà Carmela</b><span class="dim">L'ultima di Ginostra</span></li><li><b>Turi</b><span class="dim">Pescatore di totani</span></li></ul>
+</div></section>
+
+<section id="vivere"><div class="wrap">
+  <div class="head"><p class="eyebrow">Tra uno scontro e l'altro</p><h2>Sopravvivere e crescere</h2></div>
+  <div class="cols">
+    <ul class="plain">
+      <li><b>Fame e riposo.</b> <span class="dim">Scendono piano. A pancia vuota il fiato torna più lento; chi non dorme colpisce peggio.</span></li>
+      <li><b>Raccogliere.</b> <span class="dim">Legna, pietra lavica, capperi, fichi d'India, erbe, pesce, ossidiana, zolfo, rottami.</span></li>
+      <li><b>Cucinare.</b> <span class="dim">A un fuoco acceso: pesce arrosto, zuppa, pane cunzato, con un vantaggio per qualche minuto.</span></li>
+      <li><b>Forgiare.</b> <span class="dim">Alla forgia: filo d'ossidiana per le armi, giubba di pelle, mantello di cenere.</span></li>
+    </ul>
+    <ul class="plain">
+      <li><b>Un livello per tutti.</b> <span class="dim">L'esperienza è del gruppo: i quattro salgono insieme, nessuno resta indietro.</span></li>
+      <li><b>Equipaggiamento.</b> <span class="dim">Armi di classe, armature e ninnoli nei bauli sparsi; i pezzi unici li lasciano i capi.</span></li>
+      <li><b>Commercio.</b> <span class="dim">Al molo e in paese si compra e si vende; i prezzi salgono quando gli orti vengono razziati.</span></li>
+      <li><b>Riposare.</b> <span class="dim">Quando tutti riposano il tempo corre quaranta volte più in fretta: è così che si arriva al giorno dopo.</span></li>
+    </ul>
+  </div>
+</div></section>
+
+<section id="luoghi"><div class="wrap">
+  <div class="head"><p class="eyebrow">37 luoghi con un nome</p><h2>L'isola</h2><p class="dim">È Stromboli in scala vera, dal rilievo dell'INGV: dal paese a Ginostra ci sono quattro chilometri a piedi, o una corsa a cavallo.</p></div>
+  <div class="cols three"><div><h3>Il paese</h3><ul class="plain"><li><b>Piazza di San Vincenzo</b> <span class="dim">Pietra nera lucidata dai passi, e al centro il braciere: qui ogni sera si accende il Fuoco di Vespro.</span></li><li><b>Chiesa di San Vincenzo</b> <span class="dim">Calce bianca, una campana sola, e un santo che guarda il monte invece del mare.</span></li><li><b>Osteria «La Sciara»</b> <span class="dim">Odore di pane e di pesce arrosto: qui si mangia, si dorme e si sa tutto di tutti.</span></li><li><b>La forgia</b> <span class="dim">Un'incudine, un mantice sfiatato e carbone di vite: chi sa battere il ferro, qui può farlo.</span></li><li><b>Il cantiere</b> <span class="dim">Quattro fili tesi e un mucchio di pietre: Mastro Saro giura che diventerà una casa.</span></li><li><b>Gli orti</b> <span class="dim">Terrazze di capperi e viti basse, tenute su da muretti a secco e dalla testardaggine.</span></li><li><b>Molo di Scari</b> <span class="dim">Barche tirate in secco, reti stese e il banco di Donna Fina: tutto ciò che arriva sull'isola passa da qui.</span></li><li><b>La guardiola</b> <span class="dim">Una torretta tozza sulla strada a sud: da qui i campieri guardano chi sale dal campo dei predoni.</span></li><li><b>Casa del Console</b> <span class="dim">L'unica casa con due piani e i vetri alle finestre. Le persiane guardano il molo, non la piazza.</span></li></ul></div><div><h3>Luoghi</h3><ul class="plain"><li><b>L'Osservatorio</b> <span class="dim">Un belvedere di pietra davanti alla Sciara: da qui si guarda Iddu negli occhi quando butta fuoco.</span></li><li><b>Grotta di Eolo</b> <span class="dim">Una bocca buia a pelo d'acqua. Dentro il vento fischia come uno che ti chiama per nome.</span></li><li><b>Ginostra</b> <span class="dim">Case bianche con le porte aperte e nessuno dentro. Sui tavoli, i piatti dell'ultima cena.</span></li><li><b>L'ovile</b> <span class="dim">Un recinto di pietre e ginestre sopra il paese. Le capre di Tano ti guardano come si guarda un forestiero.</span></li><li><b>L'edicola</b> <span class="dim">Una nicchia con un santo scolorito e un lumino sempre acceso. Di notte, dicono, qualcuno ci tiene bottega.</span></li><li><b>Piscità</b> <span class="dim">Quattro case basse tra i capperi, a nord del paese. Qui il tempo lo segnano i totani, non la campana.</span></li><li><b>Timpone del Fuoco</b> <span class="dim">Un cocuzzolo bruciato sopra Ginostra. Le donne salivano fin qui la sera, a cantare verso il cratere.</span></li><li><b>Edicola di Santa Barbara</b> <span class="dim">Santa Barbara, che guarda dal fuoco e dal fulmine, dipinta su una maiolica annerita. Qui si può riposare; e chi cade, è da qui che riparte.</span></li><li><b>Edicola di San Bartolo</b> <span class="dim">San Bartolo, patrono delle isole, con un coltello in mano e l'aria di chi ne ha viste tante. Qui si può riposare; e chi cade, è da qui che riparte.</span></li><li><b>Edicola delle Tre Croci</b> <span class="dim">Tre croci di ferro per tre barche che non tornarono. Qualcuno cambia ancora i fiori. Qui si può riposare; e chi cade, è da qui che riparte.</span></li><li><b>Edicola della Madonna del Mare</b> <span class="dim">Una Madonnina azzurra voltata verso il largo, con una rete da pesca per mantello. Qui si può riposare; e chi cade, è da qui che riparte.</span></li><li><b>Edicola di Santa Lucia</b> <span class="dim">Santa Lucia con gli occhi nel piatto, che protegge chi cammina al buio. Il lumino lo tiene acceso una mano sola. Qui si può riposare; e chi cade, è da qui che riparte.</span></li><li><b>Edicola di Sant'Eligio</b> <span class="dim">Sant'Eligio dei fabbri, con il martello e una tenaglia: qui sotto, dicono, batteva la forgia vecchia. Qui si può riposare; e chi cade, è da qui che riparte.</span></li></ul></div><div><h3>Natura</h3><ul class="plain"><li><b>Spiaggia nera</b> <span class="dim">Sabbia di lava che scotta a mezzogiorno. All'alba, con una lenza, qualcosa si tira sempre su.</span></li><li><b>Sciara del Fuoco</b> <span class="dim">Il pendio dove il monte scarica in mare ciò che non vuole più: ossidiana, zolfo, e sassi che non avvisano.</span></li><li><b>Strombolicchio</b> <span class="dim">Uno scoglio dritto come un dente, col faro in cima. I vecchi dicono che è il tappo che Iddu sputò il primo giorno.</span></li><li><b>Ficogrande</b> <span class="dim">La spiaggia delle barche, sotto un fico più vecchio del paese. Di notte i pescatori accendono le lampare e il mare sembra un altro cielo.</span></li><li><b>Punta Labronzo</b> <span class="dim">La punta sotto il Semaforo vecchio: scogli neri, vento teso, e la prima vista sulla Sciara che fuma in mare.</span></li><li><b>Punta Lena</b> <span class="dim">La punta a sud, tutta faraglioni e risacca. Il pesce qui è grosso, e non solo il pesce tiene d'occhio la costa.</span></li><li><b>I Vancori</b> <span class="dim">La cresta più alta dell'isola. Da quassù si vedono tutte e sette le Eolie, lo zolfo fiorisce giallo tra i sassi e il vento porta via le parole.</span></li></ul></div><div><h3>Dove stanno i predoni</h3><ul class="plain"><li><b>Il campo dei predoni</b> <span class="dim">Tende di vela rattoppata, fuochi bassi e uno stemma cucito al contrario: la gente della Capitana Solfara.</span></li><li><b>L'avamposto di Punta Lena</b> <span class="dim">Una palizzata di remi e tavole di relitto. Da qui i predoni tengono chiusa la costa a sud, scudo contro scudo.</span></li><li><b>La «Carusa»</b> <span class="dim">La nave dei predoni, in secca su un fianco davanti a Ginostra. Panni stesi tra le sartie, le pompe che vanno giorno e notte.</span></li></ul></div><div><h3>Tane della Cenere</h3><ul class="plain"><li><b>Il Semaforo vecchio</b> <span class="dim">Un rudere a picco su Labronzo. La cenere qui non si posa: sta in piedi, e aspetta la notte.</span></li><li><b>Il Pizzo</b> <span class="dim">La terrazza sopra i crateri. Il vento sa di zolfo, la terra è calda sotto i piedi, e qualcosa di grande respira.</span></li><li><b>Nido di Rina Grande</b> <span class="dim">Una conca di cenere tiepida che si gonfia e si sgonfia, come il petto di uno che dorme male.</span></li><li><b>Nido della Fossetta</b> <span class="dim">Un avvallamento dove la cenere non cade: sale. Intorno, impronte che scendono verso il paese.</span></li><li><b>Nido dei Vancori</b> <span class="dim">Il più alto dei nidi, sotto la cresta. Qui la Cenere ha facce, e qualcuna si volta.</span></li></ul></div></div>
+  <div class="gallery"><figure><a href="img/g-case-paese-da-est-notte.jpg"><img src="img/g-case-paese-da-est-notte.jpg" alt="Il paese di notte, con le finestre accese" loading="lazy"></a><figcaption>Il paese di notte, con le finestre accese</figcaption></figure>
+<figure><a href="img/g-case-chiesa.jpg"><img src="img/g-case-chiesa.jpg" alt="La chiesa di San Vincenzo e la piazza" loading="lazy"></a><figcaption>La chiesa di San Vincenzo e la piazza</figcaption></figure>
+<figure><a href="img/g-case-osteria-dentro.jpg"><img src="img/g-case-osteria-dentro.jpg" alt="Dentro l'osteria «La Sciara»" loading="lazy"></a><figcaption>Dentro l'osteria «La Sciara»</figcaption></figure>
+<figure><a href="img/g-vegetazione-orti.jpg"><img src="img/g-vegetazione-orti.jpg" alt="Gli orti: vigne, fichi d'India, ulivi" loading="lazy"></a><figcaption>Gli orti: vigne, fichi d'India, ulivi</figcaption></figure>
+<figure><a href="img/g-vegetazione-canalone.jpg"><img src="img/g-vegetazione-canalone.jpg" alt="Un canalone con il canneto" loading="lazy"></a><figcaption>Un canalone con il canneto</figcaption></figure>
+<figure><a href="img/g-oggetti-molo-1.jpg"><img src="img/g-oggetti-molo-1.jpg" alt="Lo scalo di Scari: barche in secca, reti, nasse" loading="lazy"></a><figcaption>Lo scalo di Scari: barche in secca, reti, nasse</figcaption></figure>
+<figure><a href="img/g-case-nave-15m.jpg"><img src="img/g-case-nave-15m.jpg" alt="La «Carusa», la nave dei predoni in secca" loading="lazy"></a><figcaption>La «Carusa», la nave dei predoni in secca</figcaption></figure>
+<figure><a href="img/g-oggetti-campo-2.jpg"><img src="img/g-oggetti-campo-2.jpg" alt="Il campo dei predoni" loading="lazy"></a><figcaption>Il campo dei predoni</figcaption></figure>
+<figure><a href="img/g-personaggi-calador-primo-piano.jpg"><img src="img/g-personaggi-calador-primo-piano.jpg" alt="Calador da vicino" loading="lazy"></a><figcaption>Calador da vicino</figcaption></figure>
+<figure><a href="img/g-personaggi-karkan-cavallo.jpg"><img src="img/g-personaggi-karkan-cavallo.jpg" alt="Karkàn in forma di cavallo" loading="lazy"></a><figcaption>Karkàn in forma di cavallo</figcaption></figure>
+<figure><a href="img/g-effetti-eruzione-notte-1.jpg"><img src="img/g-effetti-eruzione-notte-1.jpg" alt="Iddu erutta, di notte" loading="lazy"></a><figcaption>Iddu erutta, di notte</figcaption></figure>
+<figure><a href="img/g-dopo-16-sciara-notte.jpg"><img src="img/g-dopo-16-sciara-notte.jpg" alt="La Sciara del Fuoco con le braci" loading="lazy"></a><figcaption>La Sciara del Fuoco con le braci</figcaption></figure>
+<figure><a href="img/g-effetti-vespro-vicino.jpg"><img src="img/g-effetti-vespro-vicino.jpg" alt="Il Fuoco di Vespro" loading="lazy"></a><figcaption>Il Fuoco di Vespro</figcaption></figure>
+<figure><a href="img/g-dopo-10-menu.jpg"><img src="img/g-dopo-10-menu.jpg" alt="Lo zaino e il personaggio" loading="lazy"></a><figcaption>Lo zaino e il personaggio</figcaption></figure>
+<figure><a href="img/g-interfaccia-1080-mappa-isola.jpg"><img src="img/g-interfaccia-1080-mappa-isola.jpg" alt="La mappa dell'isola nel gioco" loading="lazy"></a><figcaption>La mappa dell'isola nel gioco</figcaption></figure>
+<figure><a href="img/g-interfaccia-icone.jpg"><img src="img/g-interfaccia-icone.jpg" alt="Le icone disegnate per oggetti, abilità e luoghi" loading="lazy"></a><figcaption>Le icone disegnate per oggetti, abilità e luoghi</figcaption></figure>
+</div>
+</div></section>
+<section id="grafica">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Stesse inquadrature, due versioni</p>
+      <h2>Prima e dopo</h2>
+      <p class="dim">La prima consegna aveva il gioco ma non la grafica. La seconda versione rifà solo ciò che si vede: luce e aria, terreno e mare, case, vegetazione, personaggi, effetti, interfaccia. Regole e mondo sono identici, e si può giocare l'una o l'altra. Trascina la linea.</p>
+    </div>
+    <div class="pairs">
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-15-paese.jpg" alt="Il paese da est, prima"><img class="after" src="img/dopo-15-paese.jpg" alt="Il paese da est, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-1" type="range" min="0" max="100" value="50" aria-label="Il paese da est: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Il paese da est</h3><p>Da scatole bianche a case eoliane con terrazze, colonne e pergolati; il campanile fa da riferimento.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-02-molo.jpg" alt="Lo scalo al tramonto, prima"><img class="after" src="img/dopo-02-molo.jpg" alt="Lo scalo al tramonto, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-2" type="range" min="0" max="100" value="50" aria-label="Lo scalo al tramonto: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Lo scalo al tramonto</h3><p>Foschia a strati: la cima ora è lontana. Sabbia nera con materia, barche con i nomi dipinti.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-03-piazza.jpg" alt="La piazza a mezzogiorno, prima"><img class="after" src="img/dopo-03-piazza.jpg" alt="La piazza a mezzogiorno, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-3" type="range" min="0" max="100" value="50" aria-label="La piazza a mezzogiorno: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>La piazza a mezzogiorno</h3><p>Il braciere, il pozzo, il sagrato della chiesa.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-04-prato.jpg" alt="Il prato sopra il paese, prima"><img class="after" src="img/dopo-04-prato.jpg" alt="Il prato sopra il paese, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-4" type="range" min="0" max="100" value="50" aria-label="Il prato sopra il paese: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Il prato sopra il paese</h3><p>Ulivi, macchia ed erba fine al posto del verde unico.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-06-notte-fuoco.jpg" alt="La sera al fuoco, prima"><img class="after" src="img/dopo-06-notte-fuoco.jpg" alt="La sera al fuoco, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-5" type="range" min="0" max="100" value="50" aria-label="La sera al fuoco: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>La sera al fuoco</h3><p>La notte è blu e si legge; il fuoco e le finestre sono i soli punti caldi.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-09-interno.jpg" alt="Dentro l'osteria, prima"><img class="after" src="img/dopo-09-interno.jpg" alt="Dentro l'osteria, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-6" type="range" min="0" max="100" value="50" aria-label="Dentro l'osteria: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Dentro l'osteria</h3><p>Un interno vero: camino, tavoli, letti per riposare.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-17-tramonto.jpg" alt="La riva al tramonto, prima"><img class="after" src="img/dopo-17-tramonto.jpg" alt="La riva al tramonto, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-7" type="range" min="0" max="100" value="50" aria-label="La riva al tramonto: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>La riva al tramonto</h3><p>Il mare aveva una fascia azzurra piatta: ora ha onde, riflessi e schiuma.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-05-scontro-nave.jpg" alt="Lo scontro alla nave, prima"><img class="after" src="img/dopo-05-scontro-nave.jpg" alt="Lo scontro alla nave, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-8" type="range" min="0" max="100" value="50" aria-label="Lo scontro alla nave: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Lo scontro alla nave</h3><p>Gli avvisi dei colpi nemici non sono più zone rosse piene; i nomi compaiono solo quando servono.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-08-eroi.jpg" alt="Gli eroi da vicino, prima"><img class="after" src="img/dopo-08-eroi.jpg" alt="Gli eroi da vicino, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-9" type="range" min="0" max="100" value="50" aria-label="Gli eroi da vicino: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>Gli eroi da vicino</h3><p>Via il contorno da cartone. Calador è il modello nuovo, con la casacca a rombi e lo scudo col sole.</p></figcaption>
+      </figure>
+      <figure class="pair" style="margin:0">
+        <div class="slider"><img src="img/prima-01-titolo.jpg" alt="La schermata del titolo, prima"><img class="after" src="img/dopo-01-titolo.jpg" alt="La schermata del titolo, dopo"><span class="lab a">Prima</span><span class="lab b">Dopo</span><input id="cursore-10" type="range" min="0" max="100" value="50" aria-label="La schermata del titolo: sposta il confine tra prima e dopo"></div>
+        <figcaption><h3>La schermata del titolo</h3></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="provare">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Un'ora e mezza basta</p>
+      <h2>Che cosa provare</h2>
+    </div>
+    <ol class="try">
+      <li><b>I primi trenta secondi, senza leggere niente.</b><span>Si capisce come muoversi e colpire? Che cosa avete provato a fare che non ha funzionato?</span></li>
+      <li><b>Le vedette sulla strada a sud.</b><span>La catena di colpi, la capriola dentro un segno a terra, il colpo pesante per aprire lo scudo, il colpo alle spalle mentre l'altro lo tiene occupato. Il colpo «morde»? Morire è colpa vostra o del gioco?</span></li>
+      <li><b>Dividetevi.</b><span>Uno resta in paese (parlare, una richiesta, portare legna), l'altro va all'edicola e all'ovile. Ritrovatevi alle 18 in piazza per il fuoco. Vi siete raccontati qualcosa?</span></li>
+      <li><b>Ignorate apposta una cosa.</b><span>Niente legna, niente campo. Dormite all'osteria fino al mattino e leggete la Cronaca nel diario. È il mondo che non aspetta, o è solo un contatore che sale?</span></li>
+      <li><b>Una chiacchierata storta.</b><span>Scegliete un abitante e provate a farvi dire il suo segreto, o a farlo arrabbiare. Ha carattere? Mente? Si vede che cosa fa dopo?</span></li>
+      <li><b>Il campo dei predoni in due, con la Capitana.</b><span>Se cadete, rialzatevi a vicenda. È uno scontro o una rissa confusa?</span></li>
+      <li><b>Se resta tempo.</b><span>Il Semaforo di notte, oppure la corsa fino a Ginostra con Karkàn a cavallo. L'isola fuori dal paese sembra vuota?</span></li>
+    </ol>
+    <div class="asks">
+      <h3>Le tre domande a cui la serata deve rispondere</h3>
+      <ol>
+        <li>Il combattimento in tempo reale è la strada giusta, anche così?</li>
+        <li>Il mondo che va avanti da solo si <em>sente</em> giocando, o lo si nota solo leggendo il diario?</li>
+        <li>Che cosa vi ha fatto parlare tra di voi? Quello è il gioco: il resto è contorno.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="limiti">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Senza giri di parole</p>
+      <h2>Che cosa non è ancora</h2>
+    </div>
+    <div class="two">
+      <div>
+        <h3>Provato</h3>
+        <ul class="list">
+                    <li>La versione con la grafica nuova è stata giocata da due browser veri collegati insieme, quindici passi su quindici: muoversi, combattere, parlare con un abitante con l'IA accesa, far passare un giorno, cadere e rientrare, riavviare il server.</li>
+          <li>Mouse e tastiera veri, sempre sulla grafica nuova: diciannove controlli su diciannove, dalla scelta del personaggio ai colpi, alla capriola, ai menu.</li>
+          <li>Con due browser sulla stessa scheda video da gioco, a 1920×1080 ciascuno: tra 206 e 310 fotogrammi al secondo al livello alto, di più ai livelli medio e basso.</li>
+          <li>La grafica è stata guardata nel gioco che gira, reparto per reparto e poi tutta insieme sulle stesse inquadrature fisse, per due giri di correzioni.</li>
+          <li>Immagini e clip di questa pagina vengono dal gioco che gira, senza ritocchi.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Non provato, o debole</h3>
+        <ul class="list no">
+                    <li>Nessuna persona l'ha ancora giocato per una serata: se è divertente e se è bilanciato lo dite voi.</li>
+          <li>Girare la visuale con il mouse catturato non si può simulare nelle prove automatiche: è la prima cosa da controllare a mano.</li>
+          <li>Entrare da casa attraverso il link di Davide non è mai stato provato davvero.</li>
+          <li>Lacrime Nere è ancora una controfigura, con cappello e barba che non sono suoi.</li>
+          <li>I volti non si muovono: la testa si gira verso chi parla o verso il nemico, ed è tutto.</li>
+          <li>Lupo e cavallo sono modelli semplici; capra e gatto sono ancora fatti di forme elementari.</li>
+          <li>La linea di costa è spigolosa, le pareti ripide non hanno rocce vere, le nuvole sono dipinte.</li>
+          <li>I contenuti bastano per due o tre serate: due fronti, quindici abitanti, una decina di tipi di nemici.</li>
+          <li>Su un portatile senza scheda video il gioco abbassa da solo la qualità, ma su un computer così non è stato provato.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fatto"><div class="wrap">
+  <div class="head"><p class="eyebrow">Dietro le quinte</p><h2>Com'è fatto</h2></div>
+  <div class="cols">
+    <ul class="plain">
+      <li><b>Nel browser.</b> <span class="dim">Chi ospita accende il gioco sul suo computer; gli altri entrano da un link, senza installare niente.</span></li>
+      <li><b>Un mondo solo.</b> <span class="dim">Regole, orologio, abitanti e nemici stanno sul computer di chi ospita: tutti vedono la stessa isola.</span></li>
+      <li><b>L'isola vera.</b> <span class="dim">Rilievo TINITALY dell'INGV a 10 metri; sentieri e case da OpenStreetMap.</span></li>
+    </ul>
+    <ul class="plain">
+      <li><b>L'IA dentro il gioco.</b> <span class="dim">Fa parlare gli abitanti, commentare i compagni e legare un giorno all'altro. Costa pochi centesimi l'ora, e se manca il gioco prosegue con battute scritte.</span></li>
+      <li><b>L'IA che l'ha costruito.</b> <span class="dim">Tutto il gioco è stato scritto in due giorni, dal 9 all'11 novembre 2026, da Claude con una squadra di sotto-agenti, su indicazioni di Davide.</span></li>
+      <li><b>È una prova.</b> <span class="dim">Contenuti per due o tre serate. Serve a capire se il gioco diverte, prima di farlo crescere.</span></li>
+    </ul>
+  </div>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Costruito tra il 9 e l'11 novembre 2026 da Claude (Fable 5.2) con una squadra di sotto-agenti, su richiesta di Davide. Browser: three.js; server: Node. Rilievo dell'isola: TINITALY 1.1 dell'INGV (CC BY 4.0). Strade, case e toponimi: © OpenStreetMap contributors (ODbL). Texture di terreno, muri e oggetti: Poly Haven (CC0). Animazioni condivise e alcuni sassi: Quaternius (CC0). Modelli dei personaggi generati con Meshy. Niente è stato preso da altri giochi.</p>
+  </div>
+</footer>
+
+<script>
+  // before/after: the range moves the line
+  for (const s of document.querySelectorAll(".slider")) {
+    const input = s.querySelector("input");
+    const set = () => s.style.setProperty("--p", input.value + "%");
+    input.addEventListener("input", set);
+    set();
+  }
+  // clips: play while in view, pause when out; a button for who prefers stillness
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const vids = [...document.querySelectorAll("video")];
+  for (const v of vids) {
+    const b = v.parentElement.querySelector(".play");
+    const label = () => { if (b) b.textContent = v.paused ? "▶ RIPRODUCI" : "❚❚ PAUSA"; };
+    if (b) b.addEventListener("click", () => { v.dataset.user = v.paused ? "play" : "pause"; if (v.paused) v.play().catch(() => {}); else v.pause(); });
+    v.addEventListener("play", label);
+    v.addEventListener("pause", label);
+    if (still) { v.removeAttribute("autoplay"); v.pause(); }
+    label();
+  }
+  if (!still && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) {
+        const v = e.target;
+        if (e.isIntersecting && v.dataset.user !== "pause") v.play().catch(() => {});
+        else if (!e.isIntersecting) v.pause();
+      }
+    }, { threshold: 0.35 });
+    for (const v of vids) io.observe(v);
+  }
+</script>
+
+</body>
+</html>
